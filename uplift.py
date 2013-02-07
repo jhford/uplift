@@ -33,7 +33,7 @@ def fetch_bugs(query=default_bug_query):
     return data
 
 
-def bugs_for_branches(bugs):
+def determine_uplift_destinations(bugs):
     """ Fetch a list of bugs and pick out relevant information into a bug information table that is returned.
     This is where the bugzilla flags turn into a list of branches to land on."""
 
@@ -97,7 +97,7 @@ def find_commits_for_bug(bug, repo_dir):
 def find_all_commits(repo_dir):
     """ This function finds all the commits that are needed in this uplift"""
     all_bugs = fetch_bugs(default_bug_query)
-    bugs_to_uplift = bugs_for_branches(all_bugs)
+    bugs_to_uplift = determine_uplift_destinations(all_bugs)
     for bug in bugs_to_uplift.keys():
         print "Workin' on %s" % bug
         commits = find_commits_for_bug(bug, repo_dir)
@@ -139,6 +139,34 @@ def git_op(command, workdir=os.getcwd(), inc_err=False, **kwargs):
 def get_rev(repo_dir):
     """Get the full sha1 commit id of a git repository"""
     return git_op(["rev-parse", "HEAD"], workdir=repo_dir).strip()
+
+
+def commit_on_branch(repo_dir, commit, branch):
+    """ Determine if commit is on a local branch"""
+    cmd_out = git_op(["branch", "--contains", commit], workdir=repo_dir)
+    for line in cmd_out.split('\n'):
+        if line.strip() == branch:
+            return True
+    return False
+
+
+def cherry_pick(repo_dir, commit, branch, upstream='master'):
+    """Perform a cherry pick of 'commit' from 'branch'.  If there is more than
+    one parent for the commit, this function takes the first commit on the 'upstream'
+    branch, defaulting to master, and uses it as the parent number to pass to
+    git cherry-pick's -m parameter"""
+    git_op(["checkout", branch], workdir=repo_dir)
+    command = ["cherry-pick", "-x"] # -x leaves some breadcrumbs
+    parents = find_parents(repo_dir, commit)
+    if len(parents) > 1:
+        for i in range(0, len(parents)):
+            if commit_on_branch(repo_dir, commit, upstream):
+                parent_number = i + 1
+                break
+        command.append("-m%d" % parent_number)
+    command.append(commit)
+    git_op(command, workdir=repo_dir)
+    return get_rev(repo_dir)
 
 
 def a_before_b(repo_dir, branch, a, b):
@@ -185,37 +213,12 @@ def transpose_commits(bug_dict):
     return commit_indexed
 
 
-def commit_on_branch(repo_dir, commit, branch):
-    """ Determine if commit is on a local branch"""
-    cmd_out = git_op(["branch", "--contains", commit], workdir=repo_dir)
-    for line in cmd_out.split('\n'):
-        if line.strip() == branch:
-            return True
-    return False
-
 
 def find_parents(repo_dir, commit):
     """Return a list of commit ids that are parents to 'commit'"""
     return git_op(["log", "-n1", "--pretty=%P", commit], workdir=repo_dir).split(' ')
 
 
-def cherry_pick(repo_dir, commit, branch, upstream='master'):
-    """Perform a cherry pick of 'commit' from 'branch'.  If there is more than
-    one parent for the commit, this function takes the first commit on the 'upstream'
-    branch, defaulting to master, and uses it as the parent number to pass to
-    git cherry-pick's -m parameter"""
-    git_op(["checkout", branch], workdir=repo_dir)
-    command = ["cherry-pick", "-x"] # -x leaves some breadcrumbs
-    parents = find_parents(repo_dir, commit)
-    if len(parents) > 1:
-        for i in range(0, len(parents)):
-            if commit_on_branch(repo_dir, commit, upstream):
-                parent_number = i + 1
-                break
-        command.append("-m%d" % parent_number)
-    command.append(commit)
-    git_op(command, workdir=repo_dir)
-    return get_rev(repo_dir)
 
 
 def merge_comment(repo_dir, commit, branches):
