@@ -10,6 +10,7 @@ import isodate
 
 default_bug_query = "https://bugzilla.mozilla.org/buglist.cgi?bug_status=RESOLVED;bug_status=VERIFIED;chfield=resolution;chfieldfrom=2013-01-18;chfieldto=Now;chfieldvalue=FIXED;field0-0-0=cf_status_b2g18;field0-1-0=component;field1-0-0=flagtypes.name;field1-0-1=cf_blocking_b2g;list_id=5485185;query_format=advanced;type0-0-0=nowordssubstr;type0-1-0=substring;type1-0-0=substring;type1-0-1=equals;value0-0-0=fixed%20verified;value0-1-0=Gaia;value1-0-0=approval-gaia-v1%2B;value1-0-1=tef%2B;query_based_on=;columnlist=bug_severity%2Cpriority%2Cbug_status%2Cresolution%2Cshort_desc%2Ccf_blocking_b2g%2Ccf_tracking_b2g18%2Ccf_status_b2g18;ctype=csv"
 
+
 def fetch_bugs(query=default_bug_query):
     """Based on a bugzilla search query, fetch the bugs as a CSV list
     and return a table of the search results"""
@@ -32,14 +33,12 @@ def fetch_bugs(query=default_bug_query):
     return data
 
 
-def bugs_for_branches():
+def bugs_for_branches(bugs):
     """ Fetch a list of bugs and pick out relevant information into a bug information table that is returned.
     This is where the bugzilla flags turn into a list of branches to land on."""
 
     # TODO: This function should probably look at the status-b2g18 and status-b2g18-v1.0.0 and only include branches
     #       that are not set to 'fixed'.  This flags are in the json response as 'cf_status_b2g18' and 'cf_status_b2g18_1_0_0'
-
-    bugs = fetch_bugs() # TODO: This information should really be passed in but isn't yet
 
     bug_info = {}
 
@@ -96,12 +95,14 @@ def find_commits_for_bug(bug, repo_dir):
 
 
 def find_all_commits(repo_dir):
-    all_bugs = bugs_for_branches()
-    for bug in all_bugs.keys():
+    """ This function finds all the commits that are needed in this uplift"""
+    all_bugs = fetch_bugs(default_bug_query)
+    bugs_to_uplift = bugs_for_branches(all_bugs)
+    for bug in bugs_to_uplift.keys():
         print "Workin' on %s" % bug
         commits = find_commits_for_bug(bug, repo_dir)
-        all_bugs[bug]['commits'] = commits
-    return all_bugs
+        bugs_to_uplift[bug]['commits'] = commits
+    return bugs_to_uplift
 
 
 def run_cmd(command, workdir, inc_err=False, read_out=True, env=None, delete_env=None, **kwargs):
