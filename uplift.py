@@ -11,7 +11,7 @@ import isodate
 default_bug_query = "https://bugzilla.mozilla.org/buglist.cgi?bug_status=RESOLVED;bug_status=VERIFIED;chfield=resolution;chfieldfrom=2013-01-18;chfieldto=Now;chfieldvalue=FIXED;field0-0-0=cf_status_b2g18;field0-1-0=component;field1-0-0=flagtypes.name;field1-0-1=cf_blocking_b2g;list_id=5485185;query_format=advanced;type0-0-0=nowordssubstr;type0-1-0=substring;type1-0-0=substring;type1-0-1=equals;value0-0-0=fixed%20verified;value0-1-0=Gaia;value1-0-0=approval-gaia-v1%2B;value1-0-1=tef%2B;query_based_on=;columnlist=bug_severity%2Cpriority%2Cbug_status%2Cresolution%2Cshort_desc%2Ccf_blocking_b2g%2Ccf_tracking_b2g18%2Ccf_status_b2g18;ctype=csv"
 
 
-def fetch_bugs(query=default_bug_query):
+def fetch_bugs(query):
     """Based on a bugzilla search query, fetch the bugs as a CSV list
     and return a table of the search results"""
     data = []
@@ -69,14 +69,13 @@ def determine_uplift_destinations(bugs):
     return bug_info
 
 
-def find_commits_for_bug(bug, repo_dir):
+def find_commits_for_bug(repo_dir, bug):
     """ Given a bug id, let's find the commits that we care about.  Right now, make the hoo-man dooo eeeet"""
     sp.call(["open", "https://bugzilla.mozilla.org/show_bug.cgi?id=%d" % int(bug)])
-
-    # TODO:  This function should be smarter.  It should scan the bug comments and attachements and see if it can find sha1 sums
-    #        which point to the master branch commit information.  This function should also take a 'from_branch' parameter to
-    #        figure out which branch the changes are coming from
-
+    # TODO:  This function should be smarter.  It should scan the bug comments and attachements and 
+    #        see if it can find sha1 sums which point to the master branch commit information.  
+    #        This function should also take a 'from_branch' parameter to figure out which branch
+    #        the changes are coming from
     commits=[]
     prompt = "Type in a commit that is needed for %d or 'done' to end: " % int(bug)
     user_input = raw_input(prompt).strip()
@@ -99,8 +98,7 @@ def find_all_commits(repo_dir):
     all_bugs = fetch_bugs(default_bug_query)
     bugs_to_uplift = determine_uplift_destinations(all_bugs)
     for bug in bugs_to_uplift.keys():
-        print "Workin' on %s" % bug
-        commits = find_commits_for_bug(bug, repo_dir)
+        commits = find_commits_for_bug(repo_dir, bug)
         bugs_to_uplift[bug]['commits'] = commits
     return bugs_to_uplift
 
@@ -217,8 +215,6 @@ def transpose_commits(bug_dict):
 def find_parents(repo_dir, commit):
     """Return a list of commit ids that are parents to 'commit'"""
     return git_op(["log", "-n1", "--pretty=%P", commit], workdir=repo_dir).split(' ')
-
-
 
 
 def merge_comment(repo_dir, commit, branches):
