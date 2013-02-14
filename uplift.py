@@ -8,7 +8,9 @@ import json
 import datetime
 import isodate
 
-default_bug_query = "https://bugzilla.mozilla.org/buglist.cgi?bug_status=RESOLVED;bug_status=VERIFIED;chfield=resolution;chfieldfrom=2013-01-18;chfieldto=Now;chfieldvalue=FIXED;field0-0-0=cf_status_b2g18;field0-1-0=component;field1-0-0=flagtypes.name;field1-0-1=cf_blocking_b2g;list_id=5485185;query_format=advanced;type0-0-0=nowordssubstr;type0-1-0=substring;type1-0-0=substring;type1-0-1=equals;value0-0-0=fixed%20verified;value0-1-0=Gaia;value1-0-0=approval-gaia-v1%2B;value1-0-1=tef%2B;query_based_on=;columnlist=bug_severity%2Cpriority%2Cbug_status%2Cresolution%2Cshort_desc%2Ccf_blocking_b2g%2Ccf_tracking_b2g18%2Ccf_status_b2g18;ctype=csv"
+default_bug_query = "https://bugzilla.mozilla.org/buglist.cgi?type0-1-0=nowordssubstr;list_id=5690037;field0-1-0=cf_status_b2g18_1_0_0;field0-0-0=cf_blocking_b2g;value0-1-0=fixed%20verified;value0-0-1=shira%2B;type0-0-0=equals;value0-0-0=tef%2B;type0-2-0=nowordssubstr;known_name=unfixed-tef%2B;type0-0-1=equals;columnlist=bug_severity%2Cpriority%2Cop_sys%2Cbug_status%2Cresolution%2Cshort_desc%2Ccf_status_b2g18%2Ccf_status_b2g18_1_0_0%2Ccf_status_b2g18_1_0_1%2Ccf_blocking_b2g;field0-0-1=cf_blocking_b2g;resolution=FIXED;query_based_on=unfixed-tef%2B;query_format=advanced;value0-2-0=fixed%20verified;field0-2-0=cf_status_b2g18_1_0_1;ctype=csv"
+
+
 
 
 def fetch_bugs(query):
@@ -49,9 +51,7 @@ def determine_uplift_destinations(bugs):
         print "="*80
         print "Fetching bug data for %d -- %s" % (int(bug['bug_id']), bug['short_desc'])
         bug_data = json.loads(urllib.urlopen("https://api-dev.bugzilla.mozilla.org/1.2/bug/%s" % bug['bug_id']).read())
-        if bug_data['cf_blocking_b2g'] == 'tef+':
-            branches.extend(['v1-train', 'v1.0.0'])
-        elif bug_data['cf_blocking_b2g'] == 'shira+':
+        if bug_data['cf_blocking_b2g'] == 'tef+' or bug_data['cf_blocking_b2g'] == 'shira+':
             branches.extend(['v1-train', 'v1.0.1'])
         elif bug_data['cf_blocking_b2g'] == 'leo+':
             branches.extend(['v1-train', 'v1.1.0'])
