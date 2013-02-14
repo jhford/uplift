@@ -232,6 +232,28 @@ def merge_comment(repo_dir, commit, branches):
         comment += "git cherry-pick -x $(git log --pretty=%%H -n1 %s)\n" % branches[branch-1]
     return comment
 
+
+def _determine_gaia_cache_dir(repo_dir):
+    return os.path.join(os.path.split(repo_dir.rstrip(os.sep))[0], ".gaia.cache.git")
+
+def update_gaia(repo_dir, gaia_url):
+    cache_dir = _determine_gaia_cache_dir(repo_dir)
+    git_op(["fetch", gaia_url], workdir=cache_dir)
+    git_op(["fetch", "file://%s" % cache_dir], workdir=repo_dir)
+
+def create_gaia(repo_dir, gaia_url):
+    cache_dir = _determine_gaia_cache_dir(repo_dir)
+    if not os.isdir(cache_dir):
+        git_op(["clone", "--mirror", gaia_url, cache_dir],
+               workdir=os.split(cache_dir.rstrip(os.sep))[0])
+    else:
+        git_op(["fetch", gaia_url], workdir=cache_dir)
+    git_op(["clone", "file://%s", repo_dir], workdir=os.split(repo_dir.rstrip(os.sep)))
+    git_op(["remote", "rm", "origin"], workdir=repo_dir)
+    git_op(["remote", "add", "origin", gaia_url], workdir=repo_dir)
+    update_gaia(repo_dir, gaia_url)
+
+
 # Below here is butt'turble
 
 
