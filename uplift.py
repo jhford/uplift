@@ -7,9 +7,11 @@ import re
 import json
 import datetime
 import isodate
+import bzapi
 
-default_bug_query = "https://bugzilla.mozilla.org/buglist.cgi?type0-1-0=nowordssubstr;list_id=5690037;field0-1-0=cf_status_b2g18_1_0_0;field0-0-0=cf_blocking_b2g;value0-1-0=fixed%20verified;value0-0-1=shira%2B;type0-0-0=equals;value0-0-0=tef%2B;type0-2-0=nowordssubstr;known_name=unfixed-tef%2B;type0-0-1=equals;columnlist=bug_severity%2Cpriority%2Cop_sys%2Cbug_status%2Cresolution%2Cshort_desc%2Ccf_status_b2g18%2Ccf_status_b2g18_1_0_0%2Ccf_status_b2g18_1_0_1%2Ccf_blocking_b2g;field0-0-1=cf_blocking_b2g;resolution=FIXED;query_based_on=unfixed-tef%2B;query_format=advanced;value0-2-0=fixed%20verified;field0-2-0=cf_status_b2g18_1_0_1;ctype=csv"
+blocker_bugs = "https://bugzilla.mozilla.org/buglist.cgi?type0-1-0=nowordssubstr;list_id=5690037;field0-1-0=cf_status_b2g18_1_0_0;field0-0-0=cf_blocking_b2g;value0-1-0=fixed%20verified;value0-0-1=shira%2B;type0-0-0=equals;value0-0-0=tef%2B;type0-2-0=nowordssubstr;known_name=unfixed-tef%2B;type0-0-1=equals;columnlist=bug_severity%2Cpriority%2Cop_sys%2Cbug_status%2Cresolution%2Cshort_desc%2Ccf_status_b2g18%2Ccf_status_b2g18_1_0_0%2Ccf_status_b2g18_1_0_1%2Ccf_blocking_b2g;field0-0-1=cf_blocking_b2g;resolution=FIXED;query_based_on=unfixed-tef%2B;query_format=advanced;value0-2-0=fixed%20verified;field0-2-0=cf_status_b2g18_1_0_1;ctype=csv"
 
+v1_train_bugs = "https://bugzilla.mozilla.org/buglist.cgi?chfield=resolution;chfieldfrom=2013-01-25;chfieldto=Now;chfieldvalue=FIXED;columnlist=bug_severity%2Cpriority%2Cassigned_to%2Cbug_status%2Cresolution%2Cshort_desc%2Ccf_tracking_b2g18%2Ccf_status_b2g18%2Ccf_status_b2g18_1_0_0%2Ccf_status_b2g18_1_0_1%2Ccf_blocking_b2g;field0-0-0=flagtypes.name;field0-1-0=cf_status_b2g18;known_name=unfixed-tef%2B;list_id=5697256;query_format=advanced;type0-0-0=substring;type0-1-0=nowordssubstr;value0-0-0=approval-gaia-v1%2B;value0-1-0=fixed%20verified;query_based_on=unfixed-tef%2B;ctype=csv"
 
 
 
@@ -95,7 +97,8 @@ def find_commits_for_bug(repo_dir, bug):
 
 def find_all_commits(repo_dir):
     """ This function finds all the commits that are needed in this uplift"""
-    all_bugs = fetch_bugs(default_bug_query)
+    all_bugs = fetch_bugs(blocker_bugs)
+    all_bugs.extend(fetch_bugs(v1_train_bugs))
     bugs_to_uplift = determine_uplift_destinations(all_bugs)
     for bug in bugs_to_uplift.keys():
         commits = find_commits_for_bug(repo_dir, bug)

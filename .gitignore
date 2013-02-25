@@ -1,0 +1,11 @@
+/.Python
+.*.sw?
+*.bak
+*.bak?
+/gaia
+/uplift-gaia
+/gaia.git
+/.gaia.cache.git
+/bin
+/lib
+/include
