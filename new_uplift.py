@@ -139,7 +139,7 @@ def act_on_uplifted_bug(repo_dir, bug_id, bug):
     for commit in bug['commits']:
         failed_branches = bug['uplift_status'][commit]['failure']
         if len(failed_branches) > 0:
-            print make_merge_comment(commit, failed_branches)
+            print make_merge_comment(repo_dir, commit, failed_branches)
 
 
 
