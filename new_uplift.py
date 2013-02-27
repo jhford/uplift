@@ -114,16 +114,15 @@ def display_uplift_report(report, max_summary=90):
 
 
 def make_merge_comment(repo_dir, commit, branches):
-    s=["""\nCommit %s does not apply to %s.  This means that there are merge
-conflicts which need to be resolved.  If there are dependencies that are not
-approved for branch landing, or have yet to land on master, please let me know
+    full_commit = git.get_rev(repo_dir, commit)
+    s=["""\nCommit %s does not apply to %s.  This means that there are merge conflicts which need to be resolved.  If there are dependencies that are not approved for branch landing, or have yet to land on master, please let me know
 
-If a manual merge is required, a good place to start might be:\n  cd gaia""" % (commit, util.e_join(branches, t="or"))]
-    master_num = git.determine_cherry_pick_master_number
+If a manual merge is required, a good place to start might be:\n  cd gaia""" % (full_commit, util.e_join(branches, t="or"))]
+    master_num = git.determine_cherry_pick_master_number(repo_dir, commit, 'master')
     if not master_num:
         master_num = ""
     s.append("  git checkout %s" % branches[0])
-    s.append("  git cherry-pick -x %s %s" % (master_num, commit))
+    s.append("  git cherry-pick -x %s %s" % (master_num, full_commit))
     s.append("  <RESOLVE MERGE CONFLICTS>")
     for branch in branches[1:]:
         s.append("  git checkout %s" % branch)
@@ -291,30 +290,28 @@ def build_uplift_requirements(repo_dir, queries):
     return bug_info
 
 
-with open(query_file, 'rb') as f:
-    queries = [x.strip() for x in f.readlines()]
+if __name__ == "__main__":
+    with open(query_file, 'rb') as f:
+        queries = [x.strip() for x in f.readlines()]
 
+    if len(sys.argv) < 2:
+        print "You must specify a command"
+        exit(1)
 
-#uplift(gaia_path, bugs_needing_uplift, True)
+    cmd = sys.argv[1]
+    cmd_args = sys.argv[1:]
 
-if len(sys.argv) < 2:
-    print "You must specify a command"
-    exit(1)
-
-cmd = sys.argv[1]
-cmd_args = sys.argv[1:]
-
-if cmd == 'show':
-    bugs = build_uplift_requirements(gaia_path, queries)
-    print "\n\nRequirements for Bug uplift:"
-    print display_uplift_requirements(bugs)
-elif cmd == 'uplift':
-    requirements = build_uplift_requirements(gaia_path, queries)
-    print "\n\nUplift requirements:"
-    print display_uplift_requirements(requirements)
-    uplift_report = uplift(gaia_path, requirements)
-    print display_uplift_report(uplift_report)
-    act_on_uplift_report(gaia_path, uplift_report)
+    if cmd == 'show':
+        bugs = build_uplift_requirements(gaia_path, queries)
+        print "\n\nRequirements for Bug uplift:"
+        print display_uplift_requirements(bugs)
+    elif cmd == 'uplift':
+        requirements = build_uplift_requirements(gaia_path, queries)
+        print "\n\nUplift requirements:"
+        print display_uplift_requirements(requirements)
+        uplift_report = uplift(gaia_path, requirements)
+        print display_uplift_report(uplift_report)
+        act_on_uplift_report(gaia_path, uplift_report)
 
 
 

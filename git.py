@@ -64,7 +64,7 @@ def commit_on_branch(repo_dir, commit, branch):
     return False
 
 
-def determine_cherry_pick_master_number(repo_dir, commit, branch, upstream):
+def determine_cherry_pick_master_number(repo_dir, commit, upstream):
     parents = find_parents(repo_dir, commit)
     if len(parents) > 1:
         for i in range(0, len(parents)):
@@ -84,7 +84,7 @@ def cherry_pick(repo_dir, commit, branch, upstream='master'):
     reset(repo_dir)
     git_op(["checkout", branch], workdir=repo_dir)
     command = ["cherry-pick", "-x"] # -x leaves some breadcrumbs
-    master_num = determine_cherry_pick_master_number(repo_dir, commit, branch, upstream)
+    master_num = determine_cherry_pick_master_number(repo_dir, commit, upstream)
     if master_num:
         command.append(master_num)
     command.append(commit)
