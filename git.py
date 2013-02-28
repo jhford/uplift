@@ -5,6 +5,7 @@ import subprocess as sp
 import shutil
 import isodate
 import re
+import json
 
 import branch_logic
 
@@ -106,7 +107,7 @@ def reset(repo_dir, id="HEAD", hard=True):
     return git_op(command, workdir=repo_dir)
 
 
-def a_before_b(repo_dir, branch, a, b):
+def a_before_b(repo_dir, branch, commit_times, a, b):
     """Return True if a's commit time on branch is older than b's commit time on branch"""
     def fix_git_timestamp(timestamp):
         """Yay git for generating non-ISO8601 datetime stamps.  Git generates, e.g.
@@ -117,8 +118,14 @@ def a_before_b(repo_dir, branch, a, b):
         return "".join(as_list)
     def get_commit_time(commit):
         # This value should be cached
-        time_from_git = git_op(["log", "--branches=%s" % branch, "-n1", commit, "--pretty=%ci"], workdir=repo_dir)
-        return isodate.parse_datetime(fix_git_timestamp(time_from_git))
+        if commit_times.has_key(commit):
+            git_time = commit_times[commit]
+        else:
+            git_time = git_op(["log", "--branches=%s" % branch, "-n1", commit, "--pretty=%ci"], workdir=repo_dir).strip()
+            commit_times[commit] = git_time
+        return isodate.parse_datetime(fix_git_timestamp(git_time))
+    if a == b:
+        raise Exception("Trying to compare two commits that are the same")
     a_time = get_commit_time(a)
     b_time = get_commit_time(b)
     return a < b
@@ -127,16 +134,30 @@ def a_before_b(repo_dir, branch, a, b):
 
 def sort_commits(repo_dir, commits, branch):
     """I sort a list of commits based on when they appeared on a branch"""
-    commits = commits[:]
+    commit_time_file = "commit_times_%s.json" % branch
+    if os.path.exists(commit_time_file):
+        with open(commit_time_file, "rb") as f:
+            commit_times = json.load(f)
+    else:
+        commit_times = {}
+    c = []
+    for commit in commits:
+        if not commit in c:
+            c.append(commit)
+        else:
+            raise Exception("commit %s is in the list of bugs to sort twice!" % commit)
+    commits = c
     no_swaps = False
     while not no_swaps:
         no_swaps = True
         for i in range(1, len(commits)):
-            if not a_before_b(repo_dir, branch, commits[i-1], commits[i]):
+            if not a_before_b(repo_dir, branch, commit_times, commits[i-1], commits[i]):
                 tmp = commits[i-1]
                 commits[i-1] = commits[i]
                 commits[i] = tmp
                 no_swaps = False
+    with open(commit_time_file, "wb+") as f:
+        json.dump(commit_times, f)
     return commits
 
 
