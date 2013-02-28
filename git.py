@@ -157,7 +157,7 @@ def create_gaia(repo_dir, gaia_url):
     cache_dir = _determine_gaia_cache_dir(repo_dir)
     if not os.path.isdir(cache_dir):
         git_op(["clone", "--mirror", gaia_url, cache_dir],
-               workdir=os.split(cache_dir.rstrip(os.sep))[0])
+               workdir=os.path.split(cache_dir.rstrip(os.sep))[0])
     else:
         git_op(["fetch", gaia_url], workdir=cache_dir)
     git_op(["clone", "file://%s" % cache_dir, repo_dir], workdir=os.path.split(repo_dir.rstrip(os.sep))[0])
