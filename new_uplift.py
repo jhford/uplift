@@ -153,9 +153,17 @@ def act_on_uplift_report(repo_dir, report):
             print "Bug %s was skipped" % bug_id
 
 
+def open_bug(bug_id):
+    """I know how to open a bug for inspection"""
+    if sys.platform == "darwin":
+        git.run_cmd(["open", "https://bugzilla.mozilla.org/show_bug.cgi?id=%d" % int(bug_id)], workdir='.')
+    elif sys.platform == "linux2":
+        git.run_cmd(["firefox", "https://bugzilla.mozilla.org/show_bug.cgi?id=%d" % int(bug_id)], workdir='.')
+
+
 def find_commits_for_bug(repo_dir, bug_id):
     """ Given a bug id, let's find the commits that we care about.  Right now, make the hoo-man dooo eeeet"""
-    git.run_cmd(["open", "https://bugzilla.mozilla.org/show_bug.cgi?id=%d" % int(bug_id)], workdir='.')
+    open_bug(bug_id)
     # TODO:  This function should be smarter.  It should scan the bug comments and attachements and 
     #        see if it can find sha1 sums which point to the master branch commit information.  
     #        This function should also take a 'from_branch' parameter to figure out which branch
