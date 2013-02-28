@@ -241,6 +241,7 @@ def uplift(repo_dir, requirements, start_fresh=True):
         print "Created Gaia in %0.2f seconds" % util.time_end(t)
 
     with_commits = find_commits(repo_dir, requirements)
+    write_cache_file(with_commits, requirements_cache_file)
     ordered_commits = order_commits(repo_dir, with_commits)
 
     uplift = dict([(x, {}) for x in ordered_commits])
