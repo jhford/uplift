@@ -171,7 +171,7 @@ def _determine_gaia_cache_dir(repo_dir):
 
 def update_gaia(repo_dir, gaia_url):
     cache_dir = _determine_gaia_cache_dir(repo_dir)
-    git_op(["fetch", gaia_url], workdir=cache_dir)
+    git_op(["fetch", "--all"], workdir=cache_dir)
     git_op(["fetch", "--all"], workdir=repo_dir)
     for b in branch_logic.branches:
         git_op(["checkout", "-t", "origin/%s"%b, "-b", b], workdir=repo_dir)
