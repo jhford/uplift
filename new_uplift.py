@@ -113,45 +113,104 @@ def display_uplift_report(report, max_summary=90):
     return t
 
 
-def make_merge_comment(repo_dir, commit, branches):
+def merge_script(repo_dir, commit, branches):
     full_commit = git.get_rev(repo_dir, commit)
-    s=["""\nCommit %s does not apply to %s.  This means that there are merge conflicts which need to be resolved.  If there are dependencies that are not approved for branch landing, or have yet to land on master, please let me know
-
-If a manual merge is required, a good place to start might be:\n  cd gaia""" % (full_commit, util.e_join(branches, t="or"))]
+    s=["  git checkout %s" % branches[0]]
     master_num = git.determine_cherry_pick_master_number(repo_dir, commit, 'master')
     if not master_num:
         master_num = ""
-    s.append("  git checkout %s" % branches[0])
     s.append("  git cherry-pick -x %s %s" % (master_num, full_commit))
     s.append("  <RESOLVE MERGE CONFLICTS>")
+    s.append("  git commit")
     for branch in branches[1:]:
         s.append("  git checkout %s" % branch)
         s.append("  git cherry-pick -x $(git log -n1 %s)" % branches[0])
     return "\n".join(s)
 
 
-def act_on_uplifted_bug(repo_dir, bug_id, bug):
+def display_good_bug_comment(repo_dir, bug_id, bug):
+    """Print everything that's needed for a good bug"""
+    print "="*80
+    print "COMMENT FOR BUG https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id
+    print
+    print "Set these flags:"
+    for flag in bug['flags_to_set'].keys():
+        print "  * %s -> %s" % (flag, bug['flags_to_set'][flag])
+    print
+    print "Make this comment:"
     for commit in bug['commits']:
-        print "Commit %s was uplifted to:" % commit
+        print "Uplifted commit %s as:" % commit
         for branch in bug['uplift_status'][commit]['success'].keys():
-            print "%s@%s" % (branch, bug['uplift_status'][commit]['success'][branch])
-    for commit in bug['commits']:
-        failed_branches = bug['uplift_status'][commit]['failure']
-        if len(failed_branches) > 0:
-            print make_merge_comment(repo_dir, commit, failed_branches)
-
-
-
-def act_on_uplift_report(repo_dir, report):
-    for bug_id in report.keys():
+            print "%s: %s" % (branch, bug['uplift_status'][commit]['success'][branch])
+    print "-"*80
+    print
+    
+def display_bad_bug_comment(repo_dir, bug_id, bug):
+    """Print everything that's needed for a bad bug"""
+    print "="*80
+    print "COMMENT FOR BUG https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id
+    print
+    print "I was not able to uplift this bug to %s.  If this bug has dependencies" % util.e_join(bug['needed_on']),
+    print "which are not marked in this bug, please comment on this bug.  ",
+    print "If this bug depends on patches that aren't approved for %s," % util.e_join(bug['needed_on']),
+    print "we need to re-evaluate the approval.",
+    print "Otherwise, if this is just a merge conflict, you might be able to resolve",
+    print "it with:"
+    print
+    for commit in git.sort_commits(repo_dir, bug['commits'], 'master'):
+        print merge_script(repo_dir, commit, bug['uplift_status'][commit]['failure'])
+    print "-"*80
+    print
+    
+def display_ugly_bug_comment(repo_dir, bug_id, bug):
+    """Print everything that's needed for an ugly bug"""
+    print "="*80
+    print "BUG https://bugzilla.mozilla.org/show_bug.cgi?id=%s IS MESSED UP!" % bug_id
+    print
+    json.dump(bug, sys.stdout, indent=2, sort_keys=True)
+    print "-"*80
+    print
+    
+def classify_gbu(report):
+    """I figure out which bugs are good, bad and ugly.  Good means that everything
+    that was desired happened.  Bad means that nothing happened.  Ugly means that
+    there was partial success"""
+    good = []
+    bad = []
+    ugly = []
+    for bug_id in [x for x in report.keys() if report[x].has_key('uplift_status')]:
+        n_success = n_failure = 0
         bug = report[bug_id]
-        print "="*80
-        if bug.has_key('uplift_status'):
-            print "An uplift was attempted for bug %s" % bug_id
-            act_on_uplifted_bug(repo_dir, bug_id, bug)
+        for commit in bug['uplift_status'].keys():
+            n_success += len(bug['uplift_status'][commit]['success'].keys())
+            n_failure += len(bug['uplift_status'][commit]['failure'])
+        if n_success > 0 and n_failure > 0:
+            ugly.append(bug_id)
+        elif n_success > 0 and n_failure == 0:
+            good.append(bug_id)
+        elif n_failure > 0 and n_success == 0:
+            bad.append(bug_id)
         else:
-            print "Bug %s was skipped" % bug_id
+            raise Exception("What the hell is going on here!")
+    return good, bad, ugly
 
+
+def display_uplift_comments(repo_dir, report):
+    skipped_bugs = [x for x in report.keys() if not report[x].has_key('uplift_status')]
+    print "Skipped bugs: [%s]" % (", ".join(skipped_bugs))
+    good = [] # All commits on all branches
+    bad = [] # No commits
+    ugly = [] # Partial uplift
+    good, bad, ugly = classify_gbu(report)
+    print "Good Bugs: %s" % ", ".join(good)
+    print "Bad Bugs: %s" % ", ".join(bad)
+    print "Ugly Bugs: %s" % ", ".join(ugly)
+    for bug_id in good:
+        display_good_bug_comment(repo_dir, bug_id, report[bug_id])
+    for bug_id in bad:
+        display_bad_bug_comment(repo_dir, bug_id, report[bug_id])
+    for bug_id in ugly:
+        display_ugly_bug_comment(repo_dir, bug_id, report[bug_id])
 
 def open_bug(bug_id):
     """I know how to open a bug for inspection"""
@@ -320,7 +379,7 @@ if __name__ == "__main__":
         print display_uplift_requirements(requirements)
         uplift_report = uplift(gaia_path, requirements)
         print display_uplift_report(uplift_report)
-        act_on_uplift_report(gaia_path, uplift_report)
+        display_uplift_comments(gaia_path, uplift_report)
 
 
 
