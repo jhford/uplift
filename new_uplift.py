@@ -246,6 +246,13 @@ def find_commits_for_bug(repo_dir, bug_id):
 
 def find_commits(repo_dir, requirements):
     r = copy.deepcopy(requirements)
+    any_bug_has_commits = False
+    for bug_id in r:
+        if len(r[bug_id].get('commits', [])) > 0:
+            any_bug_has_commits = True
+            break
+    if util.ask_yn("Some bugs already have commits.  Reuse them?"):
+        return r
     for bug_id in requirements.keys():
         if len(r[bug_id].get('commits', [])) > 0:
             print "Found commits ['%s'] for bug %s" % ("', '".join(r[bug_id]['commits']), bug_id)
