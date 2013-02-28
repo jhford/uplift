@@ -134,12 +134,7 @@ def a_before_b(repo_dir, branch, commit_times, a, b):
 
 def sort_commits(repo_dir, commits, branch):
     """I sort a list of commits based on when they appeared on a branch"""
-    commit_time_file = "commit_times_%s.json" % branch
-    if os.path.exists(commit_time_file):
-        with open(commit_time_file, "rb") as f:
-            commit_times = json.load(f)
-    else:
-        commit_times = {}
+    commit_times = {}
     c = []
     for commit in commits:
         if not commit in c:
@@ -156,8 +151,6 @@ def sort_commits(repo_dir, commits, branch):
                 commits[i-1] = commits[i]
                 commits[i] = tmp
                 no_swaps = False
-    with open(commit_time_file, "wb+") as f:
-        json.dump(commit_times, f)
     return commits
 
 
