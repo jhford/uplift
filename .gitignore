@@ -2,6 +2,9 @@
 .*.sw?
 *.bak
 *.bak?
+*.pyc
+*.pyo
+*.json
 /gaia
 /uplift-gaia
 /gaia.git
@@ -9,3 +12,4 @@
 /bin
 /lib
 /include
+cmds.log
