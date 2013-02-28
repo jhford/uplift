@@ -8,6 +8,10 @@ import re
 
 import branch_logic
 
+
+#XXX UGLY HACK OMG!
+cmd_log=open("cmds.log", "wb+")
+
 def run_cmd(command, workdir, inc_err=False, read_out=True, env=None, delete_env=None, **kwargs):
     """ Wrap subprocess in a way that I like.
     command: string or list of the command to run
@@ -30,13 +34,12 @@ def run_cmd(command, workdir, inc_err=False, read_out=True, env=None, delete_env
         func = sp.check_output
     else:
         func = sp.check_call
+    print >> cmd_log, "command: %s, workdir=%s" % (command, workdir)
     return func(command, cwd=workdir, env=full_env, **kwargs)
-
 
 def git_op(command, workdir=os.getcwd(), inc_err=False, **kwargs):
     """ This function is a simple wrapper that might be used to make
     setting the path to git less obnoxious"""
-    print "cmd: %s workdir: %s" % (command, workdir)
     return run_cmd(['git'] + command, workdir, inc_err, **kwargs)
 
 
