@@ -152,9 +152,11 @@ def update_gaia(repo_dir, gaia_url):
     cache_dir = _determine_gaia_cache_dir(repo_dir)
     git_op(["fetch", gaia_url], workdir=cache_dir)
     git_op(["fetch", "--all"], workdir=repo_dir)
-    for b in branch_logic.branches + ['master']:
-        git_op(["checkout", b], workdir=repo_dir)
+    for b in branch_logic.branches:
+        git_op(["checkout", "-t", "origin/%s"%b, "-b", b], workdir=repo_dir)
         git_op(["merge", "origin/%s" % b], workdir=repo_dir)
+    git_op(["checkout", "master"], workdir=repo_dir)
+    git_op(["merge", "origin/master"], workdir=repo_dir)
 
 def create_gaia(repo_dir, gaia_url):
     cache_dir = _determine_gaia_cache_dir(repo_dir)
