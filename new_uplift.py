@@ -12,6 +12,8 @@ import git
 import bzapi
 import branch_logic
 import util
+import find_commits
+import reporting
 
 gaia_path = os.path.abspath(os.path.join(os.getcwd(), 'uplift-gaia'))
 gaia_url = "github.com:mozilla-b2g/gaia.git"
@@ -21,7 +23,6 @@ query_file = os.path.abspath("uplift_queries.dat")
 # Should be smarter about these cache files and either manage them in sets
 # or use a single file which contains *all* the information only ever added to
 requirements_cache_file = os.path.abspath("requirements.json")
-uplift_cache_file = os.path.abspath("uplift.json")
 uplift_report_file = os.path.abspath("uplift_report.json")
 
 def read_cache_file(name, path):
@@ -46,221 +47,6 @@ def find_bugs(queries):
                 bug_data.append(bug)
     return bug_data
 
-
-def trim_words(s, max=90):
-    if len(s) <= max:
-        return s
-    else:
-        i = max - 3
-        while s[i] != ' ':
-            i -= 1
-        return s[:i] + '...'
-
-
-def display_uplift_requirements(requirements, max_summary=90):
-    """Generate a PrettyTable that shows the bug id, branch status
-    and first up to 100 chars of the summary"""
-    headers = ['Bug'] + ['%s status' % x for x in branch_logic.branches] + ['Summary']
-    t = pt.PrettyTable(headers)
-    t.align['Bug'] = "l"
-    t.align['Summary'] = "l"
-    for bug_id in requirements.keys():
-        bug = requirements[bug_id]
-        row = [bug_id]
-        needed_on = bug['needed_on']
-        fixed_on = bug['already_fixed_on']
-        for branch in branch_logic.branches:
-            if branch in fixed_on:
-                row.append("fixed")
-            elif branch in needed_on:
-                row.append("needed")
-            else:
-                row.append("---")
-
-        t.add_row(row + [trim_words(bug['summary'])])
-    return t
-
-
-def display_uplift_report(report, max_summary=90):
-    """Generate a PrettyTable that shows the bug id, branch status
-    and first up to 100 chars of the summary"""
-    headers = ['Bug'] + ['%s commit' % x for x in ['master'] + branch_logic.branches] + ['Summary']
-    t = pt.PrettyTable(headers)
-    t.align['Bug'] = "l"
-    t.align['Summary'] = "l"
-    for bug_id in report.keys():
-        bug = report[bug_id]
-        row = [bug_id]
-        master_commits = bug['commits']
-        row.append("\n".join([x[:7] for x in master_commits]) if len(master_commits) > 0 else "skipped")
-        for branch in branch_logic.branches:
-            branch_commits = []
-            for mcommit in master_commits:
-                if bug.has_key('uplift_status'):
-                    if branch in bug['uplift_status'][mcommit]['success'].keys():
-                        branch_commits.append(bug['uplift_status'][mcommit]['success'][branch])
-                    elif branch in bug['uplift_status'][mcommit]['failure']:
-                        branch_commits.append("failed")
-                    else:
-                        branch_commits.append("---")
-            if len(branch_commits) == 0:
-                row.append("---")
-            else:
-                row.append("\n".join([x[:7] for x in branch_commits]))
-
-
-        t.add_row(row + [trim_words(bug['summary'])])
-    return t
-
-
-def merge_script(repo_dir, commit, branches):
-    full_commit = git.get_rev(repo_dir, commit)
-    s=["  git checkout %s" % branches[0]]
-    master_num = git.determine_cherry_pick_master_number(repo_dir, commit, 'master')
-    if not master_num:
-        master_num = ""
-    s.append("  git cherry-pick -x %s %s" % (master_num, full_commit))
-    s.append("  <RESOLVE MERGE CONFLICTS>")
-    s.append("  git commit")
-    for branch in branches[1:]:
-        s.append("  git checkout %s" % branch)
-        s.append("  git cherry-pick -x $(git log -n1 %s)" % branches[0])
-    return "\n".join(s)
-
-
-def display_good_bug_comment(repo_dir, bug_id, bug):
-    """Print everything that's needed for a good bug"""
-    print "="*80
-    print "COMMENT FOR BUG https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id
-    print
-    print "Set these flags:"
-    for flag in bug['flags_to_set'].keys():
-        print "  * %s -> %s" % (flag, bug['flags_to_set'][flag])
-    print
-    print "Make this comment:"
-    for commit in bug['commits']:
-        print "Uplifted commit %s as:" % commit
-        for branch in bug['uplift_status'][commit]['success'].keys():
-            print "%s: %s" % (branch, bug['uplift_status'][commit]['success'][branch])
-    print "-"*80
-    print
-    
-def display_bad_bug_comment(repo_dir, bug_id, bug):
-    """Print everything that's needed for a bad bug"""
-    print "="*80
-    print "COMMENT FOR BUG https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id
-    print
-    print "I was not able to uplift this bug to %s.  If this bug has dependencies" % util.e_join(bug['needed_on']),
-    print "which are not marked in this bug, please comment on this bug.  ",
-    print "If this bug depends on patches that aren't approved for %s," % util.e_join(bug['needed_on']),
-    print "we need to re-evaluate the approval.",
-    print "Otherwise, if this is just a merge conflict, you might be able to resolve",
-    print "it with:"
-    print
-    for commit in git.sort_commits(repo_dir, bug['commits'], 'master'):
-        print merge_script(repo_dir, commit, bug['uplift_status'][commit]['failure'])
-    print "-"*80
-    print
-    
-def display_ugly_bug_comment(repo_dir, bug_id, bug):
-    """Print everything that's needed for an ugly bug"""
-    print "="*80
-    print "BUG https://bugzilla.mozilla.org/show_bug.cgi?id=%s IS MESSED UP!" % bug_id
-    print
-    json.dump(bug, sys.stdout, indent=2, sort_keys=True)
-    print "-"*80
-    print
-    
-def classify_gbu(report):
-    """I figure out which bugs are good, bad and ugly.  Good means that everything
-    that was desired happened.  Bad means that nothing happened.  Ugly means that
-    there was partial success"""
-    good = []
-    bad = []
-    ugly = []
-    for bug_id in [x for x in report.keys() if report[x].has_key('uplift_status')]:
-        n_success = n_failure = 0
-        bug = report[bug_id]
-        for commit in bug['uplift_status'].keys():
-            n_success += len(bug['uplift_status'][commit]['success'].keys())
-            n_failure += len(bug['uplift_status'][commit]['failure'])
-        if n_success > 0 and n_failure > 0:
-            ugly.append(bug_id)
-        elif n_success > 0 and n_failure == 0:
-            good.append(bug_id)
-        elif n_failure > 0 and n_success == 0:
-            bad.append(bug_id)
-        else:
-            raise Exception("What the hell is going on here!")
-    return good, bad, ugly
-
-
-def display_uplift_comments(repo_dir, report):
-    skipped_bugs = [x for x in report.keys() if not report[x].has_key('uplift_status')]
-    print "Skipped bugs: [%s]" % (", ".join(skipped_bugs))
-    good = [] # All commits on all branches
-    bad = [] # No commits
-    ugly = [] # Partial uplift
-    good, bad, ugly = classify_gbu(report)
-    print "Good Bugs: %s" % ", ".join(good)
-    print "Bad Bugs: %s" % ", ".join(bad)
-    print "Ugly Bugs: %s" % ", ".join(ugly)
-    for bug_id in good:
-        display_good_bug_comment(repo_dir, bug_id, report[bug_id])
-    for bug_id in bad:
-        display_bad_bug_comment(repo_dir, bug_id, report[bug_id])
-    for bug_id in ugly:
-        display_ugly_bug_comment(repo_dir, bug_id, report[bug_id])
-
-def open_bug(bug_id):
-    """I know how to open a bug for inspection"""
-    if sys.platform == "darwin":
-        git.run_cmd(["open", "https://bugzilla.mozilla.org/show_bug.cgi?id=%d" % int(bug_id)], workdir='.')
-    elif sys.platform == "linux2":
-        git.run_cmd(["firefox", "https://bugzilla.mozilla.org/show_bug.cgi?id=%d" % int(bug_id)], workdir='.')
-
-
-def find_commits_for_bug(repo_dir, bug_id):
-    """ Given a bug id, let's find the commits that we care about.  Right now, make the hoo-man dooo eeeet"""
-    open_bug(bug_id)
-    # TODO:  This function should be smarter.  It should scan the bug comments and attachements and 
-    #        see if it can find sha1 sums which point to the master branch commit information.  
-    #        This function should also take a 'from_branch' parameter to figure out which branch
-    #        the changes are coming from
-    commits=[]
-    prompt = "Type in a commit that is needed for %s or 'done' to end: " % bug_id
-    user_input = raw_input(prompt).strip()
-    while user_input != 'done':
-        if git.valid_id(user_input):
-            try:
-                full_rev = git.get_rev(repo_dir, id=user_input)
-                print "appending %s to the list of revisions to use" % full_rev
-                commits.append(full_rev)
-            except sp.CalledProcessError, e:
-                print "This sha1 commit id (%s) is valid but not found in %s" % (user_input, repo_dir)
-        else:
-            print "This is not a sha1 commit id: %s" % user_input
-        user_input = raw_input(prompt).strip()
-    return commits
-
-
-def find_commits(repo_dir, requirements):
-    r = copy.deepcopy(requirements)
-    any_bug_has_commits = False
-    for bug_id in r:
-        if len(r[bug_id].get('commits', [])) > 0:
-            any_bug_has_commits = True
-            break
-    if util.ask_yn("Some bugs already have commits.  Reuse them?"):
-        return r
-    for bug_id in requirements.keys():
-        if len(r[bug_id].get('commits', [])) > 0:
-            print "Found commits ['%s'] for bug %s" % ("', '".join(r[bug_id]['commits']), bug_id)
-            if not util.ask_yn("Would you like to reuse these commits?"):
-                r[bug_id]['commits'] = find_commits_for_bug(repo_dir, bug_id)
-        else:
-            r[bug_id]['commits'] = find_commits_for_bug(repo_dir, bug_id)
-    return r
 
 
 def order_commits(repo_dir, requirements):
@@ -306,7 +92,7 @@ def uplift(repo_dir, requirements, start_fresh=True):
         git.create_gaia(repo_dir, gaia_url) # This is sadly broken
         print "Created Gaia in %0.2f seconds" % util.time_end(t)
 
-    with_commits = find_commits(repo_dir, requirements)
+    with_commits = find_commits.for_all_bugs(repo_dir, requirements)
     write_cache_file(with_commits, requirements_cache_file)
     ordered_commits = order_commits(repo_dir, with_commits)
 
@@ -379,14 +165,14 @@ if __name__ == "__main__":
     if cmd == 'show':
         bugs = build_uplift_requirements(gaia_path, queries)
         print "\n\nRequirements for Bug uplift:"
-        print display_uplift_requirements(bugs)
+        print reporting.display_uplift_requirements(bugs)
     elif cmd == 'uplift':
         requirements = build_uplift_requirements(gaia_path, queries)
         print "\n\nUplift requirements:"
-        print display_uplift_requirements(requirements)
+        print reporting.display_uplift_requirements(requirements)
         uplift_report = uplift(gaia_path, requirements)
-        print display_uplift_report(uplift_report)
-        display_uplift_comments(gaia_path, uplift_report)
+        print reporting.display_uplift_report(uplift_report)
+        print reporting.display_uplift_comments(gaia_path, uplift_report)
 
 
 
