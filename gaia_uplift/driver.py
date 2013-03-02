@@ -16,7 +16,7 @@ query_file = os.path.join(os.getcwd(), "uplift_queries.dat")
 
 def main():
     with open(query_file, 'rb') as f:
-        queries = [x.strip() for x in f.readlines()]
+        queries = [x.strip() for x in f.readlines() if not x.startswith("#")]
 
     if len(sys.argv) < 2:
         print "You must specify a command"
