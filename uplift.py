@@ -65,7 +65,7 @@ def uplift_bug(repo_dir, bug_id, commit, to_branches, from_branch="master"):
     return uplift_info
 
 
-def uplift(repo_dir, requirements, start_fresh=True):
+def uplift(repo_dir, gaia_url, requirements, start_fresh=True):
     """We want to take a repository and the uplift requirements and:
         1: clean up the gaia repository
         2: find all the commits for the bugs
