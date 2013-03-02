@@ -10,10 +10,6 @@ setup(
         ]
     },
 
-    package_data = {
-        'gaia_uplift': ['*.dat'],
-    },
-
     install_requires = ["isodate",
                         "PrettyTable"],
 
