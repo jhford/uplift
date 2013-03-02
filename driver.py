@@ -4,6 +4,7 @@ import os
 import sys
 
 import uplift
+import git
 import reporting
 
 
@@ -34,6 +35,14 @@ def main():
         uplift_report = uplift.uplift(gaia_path, gaia_url, requirements)
         print reporting.display_uplift_report(uplift_report)
         print reporting.display_uplift_comments(gaia_path, uplift_report)
+    elif cmd == "sort-commits":
+        if len(cmd_args) < 3:
+            print "You must have a branch and at least one commit to sort"
+            exit(1)
+        branch = cmd_args[1]
+        commits = cmd_args[2:]
+        print "->".join(git.sort_commits(gaia_path, commits, branch))
+
 
 
 if __name__ == "__main__":
