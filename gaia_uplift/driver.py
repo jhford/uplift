@@ -10,7 +10,8 @@ import reporting
 
 gaia_path = os.path.abspath(os.path.join(os.getcwd(), 'uplift-gaia'))
 gaia_url = "github.com:mozilla-b2g/gaia.git"
-query_file = os.path.abspath("uplift_queries.dat")
+#query_file = os.path.abspath("uplift_queries.dat")
+query_file = os.path.join(os.getcwd(), "uplift_queries.dat")
 
 
 def main():
