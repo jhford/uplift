@@ -163,10 +163,10 @@ def display_uplift_comments(repo_dir, report):
     bad = [] # No commits
     ugly = [] # Partial uplift
     good, bad, ugly = classify_gbu(report)
-    r = ["Skipped bugs: %s" % ", ".join(skipped_bugs),
-         "Good Bugs: %s" % ", ".join(good),
-         "Bad Bugs: %s" % ", ".join(bad),
-         "Ugly Bugs: %s" % ", ".join(ugly)]
+    r = ["Skipped bugs: %s" % ", ".join(skipped_bugs) if len(skipped_bugs) > 0 else "none",
+         "Good Bugs: %s" % ", ".join(good) if len(skipped_bugs) > 0 else "none",
+         "Bad Bugs: %s" % ", ".join(bad) if len(skipped_bugs) > 0 else "none",
+         "Ugly Bugs: %s" % ", ".join(ugly) if len(skipped_bugs) > 0 else "none"]
     for bug_id in good:
         r.append(display_good_bug_comment(repo_dir, bug_id, report[bug_id]))
     for bug_id in bad:
