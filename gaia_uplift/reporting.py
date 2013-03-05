@@ -20,7 +20,7 @@ def display_uplift_requirements(requirements, max_summary=90):
     """Generate a PrettyTable that shows the bug id, branch status
     and first up to 100 chars of the summary"""
     headers = ['Bug'] + ['%s status' % x for x in branch_logic.branches] + ['Summary']
-    t = pt.PrettyTable(headers)
+    t = pt.PrettyTable(headers, sortby="Bug")
     t.align['Bug'] = "l"
     t.align['Summary'] = "l"
     for bug_id in requirements.keys():
@@ -44,7 +44,7 @@ def display_uplift_report(report, max_summary=90):
     """Generate a PrettyTable that shows the bug id, branch status
     and first up to 100 chars of the summary"""
     headers = ['Bug'] + ['%s commit' % x for x in ['master'] + branch_logic.branches] + ['Summary']
-    t = pt.PrettyTable(headers)
+    t = pt.PrettyTable(headers, sortby="Bug")
     t.align['Bug'] = "l"
     t.align['Summary'] = "l"
     for bug_id in report.keys():
