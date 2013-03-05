@@ -36,12 +36,14 @@ def fixed_on_branches(bug):
 
 def needed_on_branches(bug):
     blocking_b2g = bug['cf_blocking_b2g']
+    tracking_b2g18 = bug['cf_tracking_b2g18'] == "+"
 
     if blocking_b2g == 'tef+' or blocking_b2g == 'shira+':
-        #branches.extend(['v1-train', 'v1.1.0', 'v1.0.1'])
         return ['v1-train', 'v1.0.1']
     elif blocking_b2g == 'leo+':
         return ['v1-train', 'v1.1.0']
+    elif tracking_b2g18:
+        return ['v1-train']
     else:
         for a in bug['attachments']:
             for f in a.get('flags', []):
