@@ -107,13 +107,14 @@ def display_good_bug_comment(repo_dir, bug_id, bug):
 def display_bad_bug_comment(repo_dir, bug_id, bug):
     """Print everything that's needed for a bad bug"""
     r = ["="*80,
-         "COMMENT FOR BUG https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id,
+         "COMMENT FOR BUG %s" % bug_id,
+         "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id,
          "",
-         "I was not able to uplift this bug to %s.  If this bug has dependencies" % util.e_join(bug['needed_on']) +
+         "I was not able to uplift this bug to %s.  If this bug has dependencies " % util.e_join(bug['needed_on']) +
          "which are not marked in this bug, please comment on this bug.  " +
-         "If this bug depends on patches that aren't approved for %s," % util.e_join(bug['needed_on']) +
-         "we need to re-evaluate the approval." +
-         "Otherwise, if this is just a merge conflict, you might be able to resolve" +
+         "If this bug depends on patches that aren't approved for %s, " % util.e_join(bug['needed_on']) +
+         "we need to re-evaluate the approval.  " +
+         "Otherwise, if this is just a merge conflict, you might be able to resolve " +
          "it with:",
          ""]
     for commit in git.sort_commits(repo_dir, bug['commits'], 'master'):
