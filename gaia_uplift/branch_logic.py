@@ -41,7 +41,9 @@ def needed_on_branches(bug):
     if blocking_b2g == 'tef+' or blocking_b2g == 'shira+':
         return ['v1-train', 'v1.0.1']
     elif blocking_b2g == 'leo+':
-        return ['v1-train', 'v1.1.0']
+        # Until we have a real v1.1.0 branch
+        #return ['v1-train', 'v1.1.0']
+        return ['v1-train']
     elif tracking_b2g18:
         return ['v1-train']
     else:
