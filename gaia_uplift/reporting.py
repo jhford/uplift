@@ -57,7 +57,11 @@ def display_uplift_report(report, max_summary=90):
             for mcommit in master_commits:
                 if bug.has_key('uplift_status'):
                     if branch in bug['uplift_status'][mcommit]['success'].keys():
-                        branch_commits.append(bug['uplift_status'][mcommit]['success'][branch])
+                        branch_commit = bug['uplift_status'][mcommit]['success'][branch]
+                        if branch_commit == mcommit:
+                            branch_commits.append("+++")
+                        else:
+                            branch_commits.append(branch_commit)
                     elif branch in bug['uplift_status'][mcommit]['failure']:
                         branch_commits.append("failed")
                     else:
@@ -99,7 +103,11 @@ def display_good_bug_comment(repo_dir, bug_id, bug):
     for commit in bug['commits']:
         r.append("Uplifted commit %s as:" % commit)
         for branch in bug['uplift_status'][commit]['success'].keys():
-            r.append("%s: %s" % (branch, bug['uplift_status'][commit]['success'][branch]))
+            branch_commit = bug['uplift_status'][commit]['success'][branch]
+            if branch_commit == commit:
+                r.append("%s already had this commit" % branch)
+            else:
+                r.append("%s: %s" % (branch, branch_commit))
     r.extend(["", "-"*80])
     return "\n".join(r)
 
