@@ -90,17 +90,28 @@ def cherry_pick(repo_dir, commit, branch, upstream='master'):
     one parent for the commit, this function takes the first commit on the 'upstream'
     branch, defaulting to master, and uses it as the parent number to pass to
     git cherry-pick's -m parameter"""
+    # TODO: Instead of returning the original commit, the new commit or None, we should
+    # return a tuple of (outcome, new_or_same_commit_or_None)
     reset(repo_dir)
     git_op(["checkout", branch], workdir=repo_dir)
-    command = ["cherry-pick", "-x"] # -x leaves some breadcrumbs
-    master_num = determine_cherry_pick_master_number(repo_dir, commit, upstream)
-    if master_num:
-        command.append(master_num)
-    command.append(commit)
-    try:
-        git_op(command, workdir=repo_dir)
-    except sp.CalledProcessError, e:
+    # If the branch already has this commit, we don't want to re-cherry-pick it
+    # but instead would like to return the original commit
+    if not commit_on_branch(repo_dir, commit, upstream):
+        print "Commit '%s' is not on the branch '%s' which we are using as upstream" % (commit, upstream)
         return None
+    elif commit_on_branch(repo_dir, commit, branch):
+        print "Commit '%s' is already on branch '%s'" % (commit, branch)
+        return commit
+    else:
+        command = ["cherry-pick", "-x"] # -x leaves some breadcrumbs
+        master_num = determine_cherry_pick_master_number(repo_dir, commit, upstream)
+        if master_num:
+            command.append(master_num)
+        command.append(commit)
+        try:
+            git_op(command, workdir=repo_dir)
+        except sp.CalledProcessError, e:
+            return None
     return get_rev(repo_dir)
 
 
