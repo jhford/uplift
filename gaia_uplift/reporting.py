@@ -136,7 +136,7 @@ def display_ugly_bug_comment(repo_dir, bug_id, bug):
     r = ["="*80,
          "BUG https://bugzilla.mozilla.org/show_bug.cgi?id=%s IS MESSED UP!" % bug_id,
          "",
-         json.dumps(indent=2, sort_keys=True),
+         json.dumps({bug_id: bug}, indent=2, sort_keys=True),
          "-"*80,""]
     return "\n".join(r)
 
