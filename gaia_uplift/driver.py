@@ -34,8 +34,13 @@ def main():
         print "\n\nUplift requirements:"
         print reporting.display_uplift_requirements(requirements)
         uplift_report = uplift.uplift(gaia_path, gaia_url, requirements)
-        print reporting.display_uplift_report(uplift_report)
-        print reporting.display_uplift_comments(gaia_path, uplift_report)
+        with open("log", "ab+") as l:
+            l.write("STARTING_NEW_UPLIFT\n")
+            l.write("==" * 80)
+            l.write("\n\n")
+            for f in (sys.stdout, l):
+                print >> f, reporting.display_uplift_report(uplift_report)
+                print >> f, reporting.display_uplift_comments(gaia_path, uplift_report)
     elif cmd == "sort-commits":
         if len(cmd_args) < 3:
             print "You must have a branch and at least one commit to sort"
