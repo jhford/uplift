@@ -94,7 +94,8 @@ def merge_script(repo_dir, commit, branches):
 def display_good_bug_comment(repo_dir, bug_id, bug):
     """Print everything that's needed for a good bug"""
     r=["="*80,
-       "COMMENT FOR BUG https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id,
+       "COMMENT FOR BUG %s" % bug_id,
+       "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id,
        "",
        "Set these flags:"]
     for flag in bug['flags_to_set'].keys():
