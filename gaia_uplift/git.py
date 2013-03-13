@@ -155,8 +155,10 @@ def sort_commits(repo_dir, commits, branch):
     for commit in commits:
         if not commit in c:
             c.append(commit)
-        else:
-            raise Exception("commit %s is in the list of bugs to sort twice!" % commit)
+        # This feels a little heavy handed.  If I want this logic to stay, it should
+        # be something that the caller wants
+        #else:
+        #    raise Exception("commit %s is in the list of bugs to sort twice!" % commit)
     commits = c
     no_swaps = False
     while not no_swaps:
