@@ -20,14 +20,46 @@ def for_one_bug(repo_dir, bug_id):
     #        This function should also take a 'from_branch' parameter to figure out which branch
     #        the changes are coming from
     commits=[]
-    prompt = "Type in a commit that is needed for %s or 'done' to end: " % bug_id
+    prompt = "Type in a commit that is needed for %s, 'list', 'delete', 'delete-all' or 'done' to end: " % bug_id
     user_input = raw_input(prompt).strip()
+    def _list_commits():
+        if len(commits) > 0:
+            print "Commits entered:"
+            for i in range(0, len(commits)):
+                print "  %d) %s" % (i, commits[i])
+        else:
+            print "No commits entered"
+
     while user_input != 'done':
-        if git.valid_id(user_input):
+        if user_input == "list":
+            _list_commits()
+        elif user_input == "delete-all":
+            commits = []
+        elif user_input == "delete":
+            del_prompt = "Enter the number of commit to delete, 'all' to clear the list or 'done' to end: "
+            _list_commits()
+            del_input = raw_input(del_prompt).strip()
+            while del_input != 'done':
+                if del_input == 'all':
+                    commits = []
+                    break
+                else:
+                    try:
+                        n = int(del_input, 10)
+                        if n >= 0 and n < len(commits):
+                            del commits[n]
+                        else:
+                            print "You entered an index that's out of the range 0-%d" % len(commits)
+                    except ValueError:
+                        print "Invalid input: %s" % del_input
+                _list_commits()
+                del_input = raw_input(del_prompt).strip()
+        elif git.valid_id(user_input):
             try:
                 full_rev = git.get_rev(repo_dir, id=user_input)
-                print "appending %s to the list of revisions to use" % full_rev
+                print "appending %s" % full_rev
                 commits.append(full_rev)
+                _list_commits()
             except sp.CalledProcessError, e:
                 print "This sha1 commit id (%s) is valid but not found in %s" % (user_input, repo_dir)
         else:
