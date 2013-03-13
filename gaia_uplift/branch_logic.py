@@ -68,3 +68,11 @@ def determine_branches(bug_id):
         'summary': bug['summary'],
     }
 
+def can_land_on_branch(bug_id, branch):
+    """ I return True if 'bug_id' can land on 'branch' according
+    to the rules of the trees"""
+    pass
+
+# This function shouldn't be in this module but it's
+def not_blocked_by(bug_id):
+    pass
