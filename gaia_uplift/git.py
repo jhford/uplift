@@ -111,6 +111,8 @@ def cherry_pick(repo_dir, commit, branch, upstream='master'):
         try:
             git_op(command, workdir=repo_dir)
         except sp.CalledProcessError, e:
+            git_op(["status"])
+            git_op(["diff"])
             return None
     return get_rev(repo_dir)
 
