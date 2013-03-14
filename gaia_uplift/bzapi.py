@@ -27,6 +27,8 @@ def do_query(url):
     json_data = json.loads(urllib.urlopen(url).read())
     if json_data.get('error', 0) != 0:
         raise FailedBZAPICall(json_data['message'])
+    with open('api-calls.log', "ab+") as f:
+        f.write(url + '\n')
     return json_data
 
 
