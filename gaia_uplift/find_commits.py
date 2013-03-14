@@ -1,8 +1,91 @@
 import sys
 import copy
+import re
 
 import git
 import util
+import bzapi
+
+
+# Let's steal the pattern that validates a sha1 as a valid
+# commit id from our git logic
+id_pattern = git.valid_id_regex
+
+# These regexes *must* have a single named group:
+#   * id: this is a direct commit id, do nothing further
+#   * pr: this is a pull request number, look up the PR
+_commit_regex = [
+    "github.com/mozilla-b2g/gaia/commit/(?P<id>%s)" % id_pattern,
+    "github.com/mozilla-b2g/gaia/pull/(?P<pr>\d*)"
+]
+commit_regex = [re.compile(x) for x in _commit_regex]
+
+
+def guess_from_pr(repo_dir, upstream, pr_num):
+    # Useful: https://api.github.com/repos/mozilla-b2g/gaia/pulls/7742, look for a merge_commit_sha key
+    #print "You should checkout Pull Request: %d" % pr_num
+    return None
+
+
+def guess_from_comments(repo_dir, upstream, comments):
+    commits = {}
+    pull_requests = []
+    for c in comments:
+        if not c.has_key('text') or c.get('text', None) == None or c.get('text', '') == '':
+            continue
+        c_txt = c['text']
+        for r in commit_regex:
+            matches = r.finditer(c_txt)
+            for m in matches:
+                d = m.groupdict()
+                if d.has_key('id'):
+                    commit_id = d['id']
+                    print "Found a guess"
+                    if git.git_object_type(repo_dir, commit_id) == 'commit':
+                        if git.get_rev(repo_dir, commit_id) and git.commit_on_branch(repo_dir, commit_id, upstream):
+                            if not commits.has_key(commit_id):
+                                commits[commit_id] = []
+                            reason = "%s made a comment which matched the pattern %s:\n%s\n%s" % (
+                                c['creator']['name'], r.pattern, "-"*80, c_txt)
+                            commits[commit_id].append(reason)
+                elif d.has_key('pr'):
+                    try:
+                        pr_num = int(d['pr'], 10)
+                    except ValueError:
+                        pass
+
+                    if not pr_num in pull_requests:
+                        pull_requests.append(pr_num)
+
+    for pr_num in pull_requests:
+        guess_from_pr(repo_dir, upstream, pr_num)
+    return commits
+
+
+def guess_from_attachments(repo_dir, upstream, comments):
+    return []
+
+
+def guess_commit(repo_dir, upstream, bug_id):
+    """I take a bug_id and scan the bug comments and attachements to see if I can find
+    some valid commits.  I return a list of (commit, reason) doubles, where the commit
+    is a string of what I think is the case and the reason is a human readable string
+    explaining *why* the commit is likely"""
+    bug_data = bzapi.fetch_complete_bug(bug_id)
+    guessed_commits = {}
+
+    def merge(y):
+        for k in y.keys():
+            if not guessed_commits.has_key(k):
+                guessed_commits[k] = []
+            guessed_commits[k].extend(y[k])
+
+    if bug_data.has_key('comments'):
+        merge(guess_from_comments(repo_dir, upstream, bug_data['comments']))
+    if bug_data.has_key('attachments'):
+        merge(guess_from_comments(repo_dir, upstream, bug_data['attachments']))
+    return guessed_commits
+
 
 def open_bug_in_browser(bug_id):
     """I know how to open a bug for inspection"""
@@ -12,16 +95,11 @@ def open_bug_in_browser(bug_id):
         git.run_cmd(["firefox", "https://bugzilla.mozilla.org/show_bug.cgi?id=%d" % int(bug_id)], workdir='.')
 
 
-def for_one_bug(repo_dir, bug_id):
+def for_one_bug(repo_dir, bug_id, upstream):
     """ Given a bug id, let's find the commits that we care about.  Right now, make the hoo-man dooo eeeet"""
-    open_bug_in_browser(bug_id)
-    # TODO:  This function should be smarter.  It should scan the bug comments and attachements and 
-    #        see if it can find sha1 sums which point to the master branch commit information.  
-    #        This function should also take a 'from_branch' parameter to figure out which branch
-    #        the changes are coming from
     commits=[]
-    prompt = "Type in a commit that is needed for %s, 'list', 'delete', 'delete-all' or 'done' to end: " % bug_id
-    user_input = raw_input(prompt).strip()
+    guesses = guess_commit(repo_dir, upstream, bug_id)
+
     def _list_commits():
         if len(commits) > 0:
             print "Commits entered:"
@@ -30,13 +108,49 @@ def for_one_bug(repo_dir, bug_id):
         else:
             print "No commits entered"
 
+    def _show_guesses():
+        keys = guesses.keys()
+        print "Guesses for bug %s" % bug_id
+        print "-=-=" * 20
+        for i in range(0, len(keys)):
+            print "  %d) %s" % (i, keys[i])
+            print "    BECAUSE:"
+            for reason in guesses[keys[i]]:
+                for line in reason.split('\n'):
+                    print "          %s" % line
+
+    prompt = "Bug %s: a commit, 'guess', 'browser', 'list', 'delete', 'delete-all' or 'done': " % bug_id
+    user_input = raw_input(prompt).strip()
+
     while user_input != 'done':
         if user_input == "list":
             _list_commits()
         elif user_input == "delete-all":
             commits = []
+        elif user_input == "guess":
+            g_prompt = "Enter the number of the commit to use, 'list', 'all' for all or 'done' to end: "
+            _show_guesses()
+            g_input = raw_input(g_prompt).strip()
+            while g_input != 'done':
+                if g_input == 'all':
+                    commits.extend(guesses.keys())
+                elif g_input == 'list':
+                    _list_commits()
+                else:
+                    try: n = int(g_input, 10)
+                    except ValueError: print "Invalid input: %s" % g_input
+                    if n >= 0 and n < len(guesses.keys()):
+                        # This is about as racey as Debbie does Dallas
+                        commits.append(guesses.keys()[n])
+                    else:
+                        print "You entered an index that's out of the range 0-%d" % len(guesses.keys())
+                if not g_input == 'list':
+                    _show_guesses()
+                g_input = raw_input(g_prompt).strip()
+        elif user_input == "browser":
+            open_bug_in_browser(bug_id)
         elif user_input == "delete":
-            del_prompt = "Enter the number of commit to delete, 'all' to clear the list or 'done' to end: "
+            del_prompt = "Enter the number of the commit to delete, 'all' to clear the list or 'done' to end: "
             _list_commits()
             del_input = raw_input(del_prompt).strip()
             while del_input != 'done':
@@ -44,14 +158,12 @@ def for_one_bug(repo_dir, bug_id):
                     commits = []
                     break
                 else:
-                    try:
-                        n = int(del_input, 10)
-                        if n >= 0 and n < len(commits):
-                            del commits[n]
-                        else:
-                            print "You entered an index that's out of the range 0-%d" % len(commits)
-                    except ValueError:
-                        print "Invalid input: %s" % del_input
+                    try: n = int(del_input, 10)
+                    except ValueError: print "Invalid input: %s" % del_input
+                    if n >= 0 and n < len(commits):
+                        del commits[n]
+                    else:
+                        print "You entered an index that's out of the range 0-%d" % len(commits)
                 _list_commits()
                 del_input = raw_input(del_prompt).strip()
         elif git.valid_id(user_input):
@@ -68,7 +180,7 @@ def for_one_bug(repo_dir, bug_id):
     return commits
 
 
-def for_all_bugs(repo_dir, requirements):
+def for_all_bugs(repo_dir, requirements, upstream="master"):
     r = copy.deepcopy(requirements)
     any_bug_has_commits = False
     for bug_id in r:
@@ -81,9 +193,9 @@ def for_all_bugs(repo_dir, requirements):
         if len(r[bug_id].get('commits', [])) > 0:
             print "Found commits ['%s'] for bug %s" % ("', '".join(r[bug_id]['commits']), bug_id)
             if not util.ask_yn("Would you like to reuse these commits?"):
-                r[bug_id]['commits'] = for_one_bug(repo_dir, bug_id)
+                r[bug_id]['commits'] = for_one_bug(repo_dir, bug_id, upstream)
         else:
-            r[bug_id]['commits'] = for_one_bug(repo_dir, bug_id)
+            r[bug_id]['commits'] = for_one_bug(repo_dir, bug_id, upstream)
     return r
 
 

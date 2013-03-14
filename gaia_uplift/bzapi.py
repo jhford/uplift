@@ -102,13 +102,18 @@ def search(query):
     return [x['id'] for x in data['bugs']]
 
 
-def fetch_bug(bug_id):
+def fetch_bug(bug_id, include_fields=None):
     query = {}
+    if include_fields:
+        query['include_fields'] = include_fields
     t = util.time_start()
     bug_data = do_query(compute_url(query, 'bug/%s' % bug_id))
     print "Fetched bug %s in %0.2f seconds" % (bug_id, util.time_end(t))
     return bug_data
 
+
+def fetch_complete_bug(bug_id):
+    return fetch_bug(bug_id, "_default,comments")
 
 def post_comment(bug_id, comment):
     """EXPERIMENTAL"""
