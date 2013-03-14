@@ -10,6 +10,8 @@ import json
 import branch_logic
 
 
+valid_id_regex = "[a-fA-F0-9]{7,40}"
+
 #XXX UGLY HACK OMG!
 cmd_log=open("cmds.log", "wb+")
 
@@ -53,7 +55,7 @@ def show(repo_dir, id='HEAD', template="oneline"):
     return git_op(["show", id, "--pretty=%s" % template], workdir=repo_dir).strip()
 
 def valid_id(id):
-    return re.match("^[a-fA-F0-9]{7,40}$", id) != None
+    return re.match("^%s$" % valid_id_regex, id) != None
 
 
 def commit_on_branch(repo_dir, commit, branch):
