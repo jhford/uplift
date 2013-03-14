@@ -58,6 +58,9 @@ def valid_id(id):
 
 def commit_on_branch(repo_dir, commit, branch):
     """ Determine if commit is on a local branch"""
+    obj_type = git_object_type(repo_dir, commit)
+    if obj_type != 'commit':
+        print "WARNING: %s is not a commit, rather a %s" % (commit, obj_type)
     try:
         cmd_out = git_op(["branch", "--contains", commit], workdir=repo_dir)
     except sp.CalledProcessError, e:
@@ -71,6 +74,11 @@ def commit_on_branch(repo_dir, commit, branch):
         if line[:2] == "* " and line[2:] == branch:
             return True
     return False
+
+
+def git_object_type(repo_dir, o_id):
+    return git_op(["cat-file", "-t", o_id], workdir=repo_dir).strip()
+
 
 
 def determine_cherry_pick_master_number(repo_dir, commit, upstream):
