@@ -197,30 +197,40 @@ def find_parents(repo_dir, commit):
     return git_op(["log", "-n1", "--pretty=%P", commit], workdir=repo_dir).split(' ')
 
 
-def _determine_gaia_cache_dir(repo_dir):
-    return os.path.join(os.path.split(repo_dir.rstrip(os.sep))[0], ".gaia.cache.git")
+def recreate_branch(repo_dir, branch, remote="origin"):
+    if branch in branches(repo_dir):
+        git_op(["branch", "-D", branch], workdir=repo_dir)
+    git_op(["checkout", "-t", "%s/%s" % (remote, branch), "-b", branch], workdir=repo_dir)
 
-def update_gaia(repo_dir, gaia_url):
-    cache_dir = _determine_gaia_cache_dir(repo_dir)
-    git_op(["fetch", "--all"], workdir=cache_dir)
-    git_op(["fetch", "--all"], workdir=repo_dir)
-    for b in branch_logic.branches:
-        git_op(["checkout", "-t", "origin/%s"%b, "-b", b], workdir=repo_dir)
-        git_op(["merge", "origin/%s" % b], workdir=repo_dir)
-    git_op(["checkout", "master"], workdir=repo_dir)
-    git_op(["merge", "origin/master"], workdir=repo_dir)
 
 def create_gaia(repo_dir, gaia_url):
-    cache_dir = _determine_gaia_cache_dir(repo_dir)
+    repo_dir_p = os.path.split(repo_dir.rstrip(os.sep))[0]
+    # cache dir should really be .%(repo_dir)s.cache.git
+    cache_dir = os.path.join(repo_dir_p, ".gaia.cache.git")
+
+    # Initialize or update the cached copy of gaia
     if not os.path.isdir(cache_dir):
         git_op(["clone", "--mirror", gaia_url, cache_dir],
                workdir=os.path.split(cache_dir.rstrip(os.sep))[0])
     else:
         git_op(["fetch", gaia_url], workdir=cache_dir)
-    git_op(["clone", "file://%s" % cache_dir, repo_dir], workdir=os.path.split(repo_dir.rstrip(os.sep))[0])
+
+    # Because we do all of the repository creation locally (i.e. cheaply), we don't
+    # really want to risk having bad commits left around, so we delete the repo
+    delete_gaia(repo_dir)
+
+    # Let's create the working copy of gaia.  We want to clone it from the
+    # cache, fix the remotes and create the remote references in the local
+    # copy by fetching from the actual remote.  We fetch the actual remote's
+    # references because we want to create a copy of gaia that doesn't need
+    # to use the cached copy when pushing changes
+    git_op(["clone", "file://%s" % cache_dir, repo_dir], workdir=repo_dir_p)
     git_op(["remote", "rename", "origin", "cache"], workdir=repo_dir)
     git_op(["remote", "add", "origin", gaia_url], workdir=repo_dir)
-    update_gaia(repo_dir, gaia_url)
+    git_op(["fetch", "origin"], workdir=repo_dir)
+    for branch in branch_logic.branches + ['master']:
+        recreate_branch(repo_dir, branch, remote="origin")
+
 
 def delete_gaia(repo_dir):
     if os.path.exists(repo_dir):
