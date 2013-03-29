@@ -1,6 +1,7 @@
 import sys
 import copy
 import re
+import json
 
 import git
 import util
@@ -33,8 +34,8 @@ def guess_from_comments(repo_dir, upstream, comments):
     for c in comments:
         if not c.has_key('text') or c.get('text', None) == None or c.get('text', '') == '':
             continue
-        c_txt = c['text']
         for r in commit_regex:
+            c_txt = c['text']
             matches = r.finditer(c_txt)
             for m in matches:
                 d = m.groupdict()
@@ -45,8 +46,10 @@ def guess_from_comments(repo_dir, upstream, comments):
                         if git.get_rev(repo_dir, commit_id) and git.commit_on_branch(repo_dir, commit_id, upstream):
                             if not commits.has_key(commit_id):
                                 commits[commit_id] = []
+                            # The reason should include the person's real name!
                             reason = "%s made a comment which matched the pattern %s:\n%s\n%s" % (
                                 c['creator']['name'], r.pattern, "-"*80, c_txt)
+
                             commits[commit_id].append(reason)
                 elif d.has_key('pr'):
                     try:
@@ -98,7 +101,14 @@ def open_bug_in_browser(bug_id):
 def for_one_bug(repo_dir, bug_id, upstream):
     """ Given a bug id, let's find the commits that we care about.  Right now, make the hoo-man dooo eeeet"""
     commits=[]
-    guesses = guess_commit(repo_dir, upstream, bug_id)
+    # It's OK to not have any guesses, but it's seriously annoying when the
+    # guessing logic kills the program!
+    try:
+        guesses = guess_commit(repo_dir, upstream, bug_id)
+    except Exception, e:
+        print >> sys.stderr, "WARNING: Unable to do guessing on %s" % bug_id
+        print >> sys.stderr, e
+        guesses = []
 
     def _list_commits():
         if len(commits) > 0:
@@ -119,16 +129,26 @@ def for_one_bug(repo_dir, bug_id, upstream):
                 for line in reason.split('\n'):
                     print "          %s" % line
 
-    prompt = "Bug %s: a commit, 'guess', 'browser', 'list', 'delete', 'delete-all' or 'done': " % bug_id
-    user_input = raw_input(prompt).strip()
+    def _open_browser():
+        open_bug_in_browser(bug_id)
 
+    prompt = "Bug %s %%d commits\nEnter one of a commit, 'guess', 'browser', 'list', 'delete', 'delete-all' or 'done': " % bug_id
+    print "=" * 80
+    user_input = raw_input(prompt % len(commits)).strip()
+
+    if len(guesses) == 0:
+        _open_browser()
+
+    # This loop has gotten pretty disgusting.
     while user_input != 'done':
         if user_input == "list":
             _list_commits()
         elif user_input == "delete-all":
             commits = []
-        elif user_input == "guess":
-            g_prompt = "Enter the number of the commit to use, 'list', 'all' for all or 'done' to end: "
+        elif user_input == "guess" and len(guesses) == 0:
+            print "There are no guesses!"
+        elif user_input == "guess" and len(guesses) > 0:
+            g_prompt = "Enter the number of the commit to use, 'list', 'browser', 'all' for all or 'done' to end: "
             _show_guesses()
             g_input = raw_input(g_prompt).strip()
             while g_input != 'done':
@@ -136,19 +156,26 @@ def for_one_bug(repo_dir, bug_id, upstream):
                     commits.extend(guesses.keys())
                 elif g_input == 'list':
                     _list_commits()
+                elif g_input == 'browser':
+                    _open_browser()
                 else:
-                    try: n = int(g_input, 10)
-                    except ValueError: print "Invalid input: %s" % g_input
-                    if n >= 0 and n < len(guesses.keys()):
-                        # This is about as racey as Debbie does Dallas
-                        commits.append(guesses.keys()[n])
-                    else:
-                        print "You entered an index that's out of the range 0-%d" % len(guesses.keys())
+                    try:
+                        n = int(g_input, 10)
+                        valid_input = True
+                    except ValueError:
+                        print "Invalid input: %s" % g_input
+                        valid_input = False
+                    if valid_input:
+                        if n >= 0 and n < len(guesses.keys()):
+                            # This is about as racey as Debbie does Dallas
+                            commits.append(guesses.keys()[n])
+                        else:
+                            print "You entered an index that's out of the range 0-%d" % len(guesses.keys())
                 if not g_input == 'list':
                     _show_guesses()
                 g_input = raw_input(g_prompt).strip()
         elif user_input == "browser":
-            open_bug_in_browser(bug_id)
+            _open_browser()
         elif user_input == "delete":
             del_prompt = "Enter the number of the commit to delete, 'all' to clear the list or 'done' to end: "
             _list_commits()
@@ -158,12 +185,17 @@ def for_one_bug(repo_dir, bug_id, upstream):
                     commits = []
                     break
                 else:
-                    try: n = int(del_input, 10)
-                    except ValueError: print "Invalid input: %s" % del_input
-                    if n >= 0 and n < len(commits):
-                        del commits[n]
-                    else:
-                        print "You entered an index that's out of the range 0-%d" % len(commits)
+                    try:
+                        n = int(del_input, 10)
+                        valid_input = True
+                    except ValueError:
+                        print "Invalid input: %s" % del_input
+                        valid_input = False
+                    if valid_input:
+                        if n >= 0 and n < len(commits):
+                            del commits[n]
+                        else:
+                            print "You entered an index that's out of the range 0-%d" % len(commits)
                 _list_commits()
                 del_input = raw_input(del_prompt).strip()
         elif git.valid_id(user_input):
@@ -176,7 +208,7 @@ def for_one_bug(repo_dir, bug_id, upstream):
                 print "This sha1 commit id (%s) is valid but not found in %s" % (user_input, repo_dir)
         else:
             print "This is not a sha1 commit id: %s" % user_input
-        user_input = raw_input(prompt).strip()
+        user_input = raw_input(prompt % len(commits)).strip()
     return commits
 
 
@@ -196,6 +228,10 @@ def for_all_bugs(repo_dir, requirements, upstream="master"):
                 r[bug_id]['commits'] = for_one_bug(repo_dir, bug_id, upstream)
         else:
             r[bug_id]['commits'] = for_one_bug(repo_dir, bug_id, upstream)
+
+        # Save a temporary copy.  ugly!!!
+        with open("requirements-tmp.json", "wb+") as f:
+            json.dump(r, f, indent=2, sort_keys=True)
     return r
 
 
