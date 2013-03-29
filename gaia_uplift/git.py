@@ -58,6 +58,19 @@ def valid_id(id):
     return re.match("^%s$" % valid_id_regex, id) != None
 
 
+def branches(repo_dir):
+    cmd_out = git_op(["branch"], workdir=repo_dir)
+    branches=[]
+    for line in [x.strip() for x in cmd_out.split('\n')]:
+        if line == '':
+            continue
+        elif line[:2] == "* ":
+            branches.append(line[2:])
+        else:
+            branches.append(line)
+    return branches
+
+
 def commit_on_branch(repo_dir, commit, branch):
     """ Determine if commit is on a local branch"""
     obj_type = git_object_type(repo_dir, commit)
@@ -67,15 +80,10 @@ def commit_on_branch(repo_dir, commit, branch):
         cmd_out = git_op(["branch", "--contains", commit], workdir=repo_dir)
     except sp.CalledProcessError, e:
         return False
-    for line in [x.strip() for x in cmd_out.split('\n')]:
-        if line == branch: # Simple case
-            return True
-        # git branch shows current branch with "*  $branch".  We want to make sure
-        # that if we're going to strip the "* " off, that we only do it when it's
-        # definately "* " and not some other unexpected sequence
-        if line[:2] == "* " and line[2:] == branch:
-            return True
-    return False
+    if branch in branches(repo_dir):
+        return True
+    else:
+        return False
 
 
 def git_object_type(repo_dir, o_id):
