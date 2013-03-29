@@ -127,7 +127,7 @@ def uplift(repo_dir, gaia_url, requirements, start_fresh=True):
                 successful_branches.extend([x for x in u[commit]['success'].keys() if x not in successful_branches])
         # Because we might have multiple commits, we want to make sure that the list of successful branches
         # includes only those with *no* failing uplifts
-        for i in range(0, len(successful_branches)):
+        for i in range(len(successful_branches) - 1, -1, -1):
             if successful_branches[i] in failed_branches:
                 del successful_branches[i]
         uplift_report[bug_id]['flags_to_set'] = branch_logic.flags_to_set(successful_branches)
