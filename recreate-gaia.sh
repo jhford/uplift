@@ -2,6 +2,13 @@
 
 set -ex
 
+VENV=linter_venv
+
+if [ ! -d $VENV ] ; then
+    virtualenv $VENV
+    $VENV/bin/pip install http://closure-linter.googlecode.com/files/closure_linter-latest.tar.gz
+fi
+
 GAIA_REMOTE=github.com:mozilla-b2g/gaia.git
 
 # Update the reference repository
