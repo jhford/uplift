@@ -6,6 +6,7 @@ import json
 import git
 import util
 import bzapi
+import uplift
 
 
 # Let's steal the pattern that validates a sha1 as a valid

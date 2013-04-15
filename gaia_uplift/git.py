@@ -92,8 +92,7 @@ def commit_on_branch(repo_dir, commit, branch):
 
 
 def git_object_type(repo_dir, o_id):
-    return git_op(["cat-file", "-t", o_id], workdir=repo_dir).strip()
-
+    return git_op(["cat-file", "-t", o_id.strip()], workdir=repo_dir).strip()
 
 
 def determine_cherry_pick_master_number(repo_dir, commit, upstream):
