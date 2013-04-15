@@ -171,7 +171,7 @@ def a_before_b(repo_dir, branch, commit_times, a, b):
         raise Exception("Trying to compare two commits that are the same")
     a_time = get_commit_time(a)
     b_time = get_commit_time(b)
-    return a < b
+    return a_time < b_time
 
 
 
