@@ -125,12 +125,26 @@ def uplift(repo_dir, gaia_url, requirements, start_fresh=True):
     return uplift_report
 
 
+def skip_bug(bug_id):
+    with open('skip_bugs.json', 'rb+') as f:
+        data=json.load(f)
+        data.append(bug_id)
+        f.seek(0)
+        json.dump(data, f)
+
+
+def is_skipable(bug_id):
+    with open('skip_bugs.json', 'rb+') as f:
+        data = json.load(f)
+    return bug_id in data
+
 def build_uplift_requirements(repo_dir, queries):
     bug_info = read_cache_file("uplift information", requirements_cache_file)
     if not bug_info:
         bug_info = {}
         bugs = dict([(x, bzapi.fetch_bug(x)) for x in find_bugs(queries)])
-        for bug_id in bugs.keys():
+        for bug_id in [x for x in bugs.keys() if not is_skipable(x)]:
+
             b = bug_info[bug_id] = {}
             bug = bugs[bug_id]
             b['needed_on'] = branch_logic.needed_on_branches(bug)

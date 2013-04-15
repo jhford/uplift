@@ -132,17 +132,17 @@ def for_one_bug(repo_dir, bug_id, upstream):
     def _open_browser():
         open_bug_in_browser(bug_id)
 
-    prompt = "Bug %s %%d commits\nEnter one of a commit, 'guess', 'browser', 'list', 'delete', 'delete-all' or 'done': " % bug_id
+    prompt = "Bug %s %%d commits\nEnter one of a commit, 'guess', 'skip', 'browser', 'list', 'delete', 'delete-all' or 'done': " % bug_id
     print "=" * 80
     user_input = raw_input(prompt % len(commits)).strip()
-
-    if len(guesses) == 0:
-        _open_browser()
 
     # This loop has gotten pretty disgusting.
     while user_input != 'done':
         if user_input == "list":
             _list_commits()
+        elif user_input == "skip":
+            uplift.skip_bug(bug_id)
+            break
         elif user_input == "delete-all":
             commits = []
         elif user_input == "guess" and len(guesses) == 0:

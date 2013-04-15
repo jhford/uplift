@@ -4,7 +4,8 @@
 *.bak?
 *.pyc
 *.pyo
-*.json
+requirements.json
+uplift_report.json
 /gaia
 /uplift-gaia
 /gaia.git
