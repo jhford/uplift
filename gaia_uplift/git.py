@@ -54,12 +54,12 @@ def get_rev(repo_dir, id='HEAD'):
 def show(repo_dir, id='HEAD', template="oneline"):
     return git_op(["show", id, "--pretty=%s" % template], workdir=repo_dir).strip()
 
+
 def valid_id(id):
     return re.match("^%s$" % valid_id_regex, id) != None
 
 
-def branches(repo_dir):
-    cmd_out = git_op(["branch"], workdir=repo_dir)
+def _parse_branches(cmd_out):
     branches=[]
     for line in [x.strip() for x in cmd_out.split('\n')]:
         if line == '':
@@ -71,6 +71,11 @@ def branches(repo_dir):
     return branches
 
 
+def branches(repo_dir):
+    cmd_out = git_op(["branch"], workdir=repo_dir)
+    return _parse_branches(cmd_out)
+
+
 def commit_on_branch(repo_dir, commit, branch):
     """ Determine if commit is on a local branch"""
     obj_type = git_object_type(repo_dir, commit)
@@ -80,7 +85,7 @@ def commit_on_branch(repo_dir, commit, branch):
         cmd_out = git_op(["branch", "--contains", commit], workdir=repo_dir)
     except sp.CalledProcessError, e:
         return False
-    if branch in branches(repo_dir):
+    if branch in _parse_branches(cmd_out):
         return True
     else:
         return False
@@ -94,6 +99,9 @@ def git_object_type(repo_dir, o_id):
 def determine_cherry_pick_master_number(repo_dir, commit, upstream):
     parents = find_parents(repo_dir, commit)
     if len(parents) > 1:
+        # There is a bug here where the parent_number is not set if the commit is not
+        # on the 'upstream' branch.  This should raise an exception that's not about
+        # using an unreferenced variable
         for i in range(0, len(parents)):
             if commit_on_branch(repo_dir, parents[i], upstream):
                 parent_number = i + 1
