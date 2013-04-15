@@ -44,7 +44,6 @@ def find_bugs(queries):
     return bug_data
 
 
-
 def order_commits(repo_dir, requirements):
     commits = []
     for bug_id in requirements.keys():
@@ -106,7 +105,7 @@ def uplift(repo_dir, gaia_url, requirements, start_fresh=True):
     for bug_id in uplift_report.keys():
         successful_branches = []
         failed_branches = []
-        for commit in uplift_report[bug_id]['commits']:
+        for commit in git.sort_commits(repo_dir, uplift_report[bug_id]['commits'], 'master'):
             if commit in uplift.keys():
                 if not uplift_report[bug_id].has_key('uplift_status'):
                     uplift_report[bug_id]['uplift_status'] = {}
