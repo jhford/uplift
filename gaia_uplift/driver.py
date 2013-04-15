@@ -41,6 +41,9 @@ def main():
             for f in (sys.stdout, l):
                 print >> f, reporting.display_uplift_report(uplift_report)
                 print >> f, reporting.display_uplift_comments(gaia_path, uplift_report)
+    elif cmd == 'reset-gaia':
+        git.delete_gaia(gaia_path)
+        git.create_gaia(gaia_path, gaia_url)
     elif cmd == "sort-commits":
         if len(cmd_args) < 3:
             print "You must have a branch and at least one commit to sort"
