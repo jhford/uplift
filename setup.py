@@ -11,6 +11,7 @@ setup(
     },
 
     install_requires = ["isodate",
+                        "requests",
                         "PrettyTable"],
 
     # metadata for upload to PyPI
