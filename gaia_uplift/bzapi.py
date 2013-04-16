@@ -32,15 +32,6 @@ def do_query(url):
     return json_data
 
 
-def api_call(query, endpoint, method="get"):
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    if method == "get":
-        request = urllib2.Request(compute_url(query, endpoint))
-    elif method == "put":
-        #request = urllib2.Request(
-        pass
-
-
 def flatten_query(query):
     fquery = {} # Flattened query
     for k in query.keys():
