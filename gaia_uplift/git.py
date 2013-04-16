@@ -251,6 +251,9 @@ def delete_gaia(repo_dir):
 
 
 def update_gaia(repo_dir, gaia_url):
+    if not os.exists(repo_dir):
+        print "You are trying to update a repository that doesn't exist"
+        create_gaia(repo_dir, gaia_url)
     # cache dir should really be .%(repo_dir)s.cache.git
     cache_dir = _cache_dir(repo_dir)
     git_op(["fetch", gaia_url], workdir=cache_dir)
