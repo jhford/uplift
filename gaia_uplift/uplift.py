@@ -152,3 +152,33 @@ def build_uplift_requirements(repo_dir, queries):
         write_cache_file(bug_info, requirements_cache_file)
     return bug_info
 
+
+def _display_push_info(push_info):
+    pass
+
+
+def push(repo_dir):
+    preview_push_info = git.push(
+        repo_dir, remote="origin",
+        branches=branch_logic.branches, dry_run=True)
+    print "This is what you'd be pushing:"
+    _display_push_info(preview_push_info)
+    prompt = "push, a branch name or cancel: "
+    user_input = raw_input(prompt).strip()
+    actual_push_info = None
+    while True:
+        if user_input == 'push':
+            actual_push_info = git.push(
+                repo_dir, remote="origin",
+                branches=branch_logic.branches)
+            break
+        elif user_input == 'cancel':
+            print "Cancelling"
+            break
+        elif user_input in branch_logic.branches:
+            print "not done yet, would show log for %s" % user_input
+        else:
+            user_input = raw_input(prompt).strip()
+    return actual_push_info
+
+

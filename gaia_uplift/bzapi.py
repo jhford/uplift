@@ -28,7 +28,6 @@ def do_query(url, method='get', **kwargs):
     raised as FailedBZAPICall exceptions"""
 
     response = requests.request(method, url, **kwargs)
-    print response.content
     json_data = response.json()
     if json_data.get('error', 0) != 0:
         raise FailedBZAPICall(json_data['message'])

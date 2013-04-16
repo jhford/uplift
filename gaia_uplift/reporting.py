@@ -4,6 +4,7 @@ import prettytable as pt
 import branch_logic
 import util
 import git
+import bzapi
 
 
 def trim_words(s, max=90):
@@ -87,7 +88,7 @@ def merge_script(repo_dir, commit, branches):
     s.append("  git commit")
     for branch in branches[1:]:
         s.append("  git checkout %s" % branch)
-        s.append("  git cherry-pick -x $(git log -n1 %s --pretty=%H)" % branches[0])
+        s.append("  git cherry-pick -x $(git log -n1 %s --pretty=%%H)" % branches[0])
     return "\n".join(s)
 
 
@@ -184,4 +185,102 @@ def display_uplift_comments(repo_dir, report):
         r.append(display_ugly_bug_comment(repo_dir, bug_id, report[bug_id]))
     return "\n".join(r)
 
+
+def good_bug_comment(repo_dir, bug_id, bug):
+    values = bug['flags_to_set']
+    comment = ""
+    for commit in bug['commits']:
+        comment = "Uplifted %s to:\n" % bug_id
+        for branch in bug['uplift_status'][commit]['success'].keys():
+            branch_commit = bug['uplift_status'][commit]['success'][branch]
+            if branch_commit == commit:
+                comment.append("%s already had this commit\n" % branch)
+            else:
+                comment.append("%s: %s\n" % (branch, branch_commit))
+    try:
+        bzapi.update_bug(bug_id, comment=comment, values=values)
+    except:
+        print "=" * 80
+        print "Unable to comment on bug %s, please do this:" % bug_id
+        print "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" & bug_id
+        print "Change these flags:"
+        for flag in values.keys():
+            print "  * %s -> %s" % flag, values[flag]
+        print "\nAnd make this this comment:"
+        print comment
+
+
+def bad_bug_comment(repo_dir, bug_id, bug):
+    skip_this_comment = False
+    bug_data = bzapi.fetch_complete_bug(bug_id)
+    for c in [x['text'] for x in bug_data['comments']]:
+        if 'git cherry-pick' in c:
+            skip_this_comment = True
+    comment = [
+         "I was not able to uplift this bug to %s.  If this bug has dependencies " % util.e_join(bug['needed_on']) +
+         "which are not marked in this bug, please comment on this bug.  " +
+         "If this bug depends on patches that aren't approved for %s, " % util.e_join(bug['needed_on']) +
+         "we need to re-evaluate the approval.  " +
+         "Otherwise, if this is just a merge conflict, you might be able to resolve " +
+         "it with:",
+         ""]
+    for commit in git.sort_commits(repo_dir, bug['commits'], 'master'):
+        comment.append(merge_script(repo_dir, commit, bug['uplift_status'][commit]['failure']))
+    comment = "\n".join(comment) #ugh
+    if skip_this_comment:
+        print "Skipping this comment because there was already a merge resolution script"
+        print ""
+        print comment
+        print ""
+        return
+    try:
+        bzapi.update_bug(bug_id, comment=comment, values={})
+    except:
+        print "=" * 80
+        print "Unable to comment on bug %s, please do this:" % bug_id
+        print "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" & bug_id
+        print "\nmake this this comment:"
+        print comment
+
+def ugly_bug_comment(repo_dir, bug_id, bug):
+    values = bug['flags_to_set']
+    comment = "This bug was partially uplifted.\n\n"
+    bottom_of_comment = "\n"
+    for commit in bug['commits']:
+        comment += "Uplifted %s to:\n" % bug_id
+        for branch in bug['uplift_status'][commit]['success'].keys():
+            branch_commit = bug['uplift_status'][commit]['success'][branch]
+            if branch_commit == commit:
+                comment += "%s already had this commit\n" % branch
+            else:
+                comment += "%s: %s\n" % (branch, branch_commit)
+        for branch in bug['uplift_status'][commit]['failure']:
+            bottom_of_comment += "Commit %s didn't uplift to branch %s\n" % (commit, branch)
+    comment += bottom_of_comment
+    try:
+        bzapi.update_bug(bug_id, comment=comment, values=values)
+    except:
+        print "=" * 80
+        print "Unable to comment on bug %s, please do this:" % bug_id
+        print "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" & bug_id
+        print "Change these flags:"
+        for flag in values.keys():
+            print "  * %s -> %s" % flag, values[flag]
+        print "\nAnd make this this comment:"
+        print comment
+        print "-"*80
+        print bug
+
+
+def comment(repo_dir, report):
+    good = [] # All commits on all branches
+    bad = [] # No commits
+    ugly = [] # Partial uplift
+    good, bad, ugly = classify_gbu(report)
+    for bug_id in good:
+        good_bug_comment(repo_dir, bug_id, report[bug_id])
+    for bug_id in bad:
+        bad_bug_comment(repo_dir, bug_id, report[bug_id])
+    for bug_id in ugly:
+        ugly_bug_comment(repo_dir, bug_id, report[bug_id])
 

@@ -9,6 +9,9 @@ import json
 
 import branch_logic
 
+class PushFailure(Exception):
+    pass
+
 
 valid_id_regex = "[a-fA-F0-9]{7,40}"
 
@@ -204,6 +207,55 @@ def find_parents(repo_dir, commit):
     return git_op(["log", "-n1", "--pretty=%P", commit], workdir=repo_dir).split(' ')
 
 
+def push(repo_dir, remote="origin", branches=[], dry_run=True):
+    """ Push code on branches to remote and return a dictionary like:
+        {'url': 'repo.git',
+         'branches': {'master': (first_commit, last_commit),
+                      'other': (first_commit, last_commit)
+                     }
+        }
+    """
+    #(uplifting)jhford-air:~/b2g/uplifting $ git push --porcelain
+    #STDERR:Counting objects: 51, done.
+    #STDERR:Delta compression using up to 4 threads.
+    #STDERR:Compressing objects: 100% (42/42), done.
+    #STDERR:Writing objects: 100% (42/42), 4.64 KiB, done.
+    #STDERR:Total 42 (delta 29), reused 0 (delta 0)
+    #STDOUT:To git@github.com:jhford/uplift.git
+    #STDOUT:	refs/heads/master:refs/heads/master	deb52cd..f46620e
+    #STDOUT:Done
+    command = ['push', '--porcelain']
+    if dry_run:
+        command.append('--dry-run')
+    if remote:
+        command.append(remote)
+    command += branches
+    try:
+        output = git_op(command, workdir=repo_dir)
+    except Exception as e:
+        print e
+        raise PushFailure("Failed to run git command '%s' to push" % command)
+    lines = [x for x in output.split('\n') if x.strip() != '']
+    if lines[-1].strip() != 'Done':
+        raise PushFailure("Failed to complete push of '%s' to '%s'" % ("', '".join(branches), remote))
+    push_data = {
+        'branches':{},
+        'url': lines[0].strip().lstrip('To ')
+    }
+    for push_item in lines[1:-1]:
+        print push_item
+        flag, ref_spec, rev_range = push_item.split('\t')
+        if flag != ' ':
+            continue
+        local_branch, remote_branch = [x.lstrip('refs/heads/') for x in ref_spec.split(':')]
+        first_commit, last_commit = rev_range.split('..')
+        push_data['branches'][local_branch] = (first_commit, last_commit)
+    return push_data
+
+
+
+
+
 def recreate_branch(repo_dir, branch, remote="origin"):
     if branch in branches(repo_dir):
         git_op(["branch", "-D", branch], workdir=repo_dir)
@@ -252,8 +304,7 @@ def delete_gaia(repo_dir):
 
 def update_gaia(repo_dir, gaia_url):
     if not os.path.exists(repo_dir):
-        print "You are trying to update a repository that doesn't exist"
-        create_gaia(repo_dir, gaia_url)
+        print "Gaia doesn't exist yet, creating it"
     # cache dir should really be .%(repo_dir)s.cache.git
     cache_dir = _cache_dir(repo_dir)
     git_op(["fetch", gaia_url], workdir=cache_dir)

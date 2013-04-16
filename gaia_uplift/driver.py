@@ -43,7 +43,22 @@ def main():
             for f in (sys.stdout, l):
                 print >> f, reporting.display_uplift_report(uplift_report)
                 print "%d bugs" % len(uplift_report)
-                print >> f, reporting.display_uplift_comments(gaia_path, uplift_report)
+            print >> l, reporting.display_uplift_comments(gaia_path, uplift_report)
+
+        push_info = None
+        while push_info == None:
+            try:
+                push_info = uplift.push(gaia_path)
+            except git.PushFailure:
+                print "Pushing failed.  If you don't want to retry,"
+                print "a lot of instructions will be printed should"
+                print "you want to copy the comments over manually"
+                if not util.askyn("Retry?"):
+                    print reporting.display_uplift_comments(gaia_path, uplift_report)
+                    break
+
+        if push_info:
+            reporting.comment(gaia_path, uplift_report)
     elif cmd == 'reset-gaia':
         git.delete_gaia(gaia_path)
         git.create_gaia(gaia_path, gaia_url)
