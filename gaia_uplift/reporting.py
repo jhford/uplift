@@ -87,7 +87,7 @@ def merge_script(repo_dir, commit, branches):
     s.append("  git commit")
     for branch in branches[1:]:
         s.append("  git checkout %s" % branch)
-        s.append("  git cherry-pick -x $(git log -n1 %s)" % branches[0])
+        s.append("  git cherry-pick -x $(git log -n1 %s --pretty=%H)" % branches[0])
     return "\n".join(s)
 
 
