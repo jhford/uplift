@@ -211,9 +211,9 @@ def recreate_branch(repo_dir, branch, remote="origin"):
 
 
 def _cache_dir(repo_dir):
-    repo_dir_p = os.path.split(repo_dir.rstrip(os.sep))[0]
+    repo_dir_p, repo_dir_t = os.path.split(repo_dir.rstrip(os.sep))
     # cache dir should really be .%(repo_dir)s.cache.git
-    return os.path.join(repo_dir_p, ".gaia.cache.git")
+    return os.path.join(repo_dir_p, ".%s.cache.git" % repo_dir_t)
 
 
 def create_gaia(repo_dir, gaia_url):
@@ -251,7 +251,7 @@ def delete_gaia(repo_dir):
 
 
 def update_gaia(repo_dir, gaia_url):
-    if not os.exists(repo_dir):
+    if not os.path.exists(repo_dir):
         print "You are trying to update a repository that doesn't exist"
         create_gaia(repo_dir, gaia_url)
     # cache dir should really be .%(repo_dir)s.cache.git
