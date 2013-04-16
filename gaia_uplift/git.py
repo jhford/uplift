@@ -210,10 +210,16 @@ def recreate_branch(repo_dir, branch, remote="origin"):
     git_op(["checkout", "-t", "%s/%s" % (remote, branch), "-b", branch], workdir=repo_dir)
 
 
+def _cache_dir(repo_dir):
+    repo_dir_p = os.path.split(repo_dir.rstrip(os.sep))[0]
+    # cache dir should really be .%(repo_dir)s.cache.git
+    return os.path.join(repo_dir_p, ".gaia.cache.git")
+
+
 def create_gaia(repo_dir, gaia_url):
     repo_dir_p = os.path.split(repo_dir.rstrip(os.sep))[0]
     # cache dir should really be .%(repo_dir)s.cache.git
-    cache_dir = os.path.join(repo_dir_p, ".gaia.cache.git")
+    cache_dir = _cache_dir(repo_dir)
 
     # Initialize or update the cached copy of gaia
     if not os.path.isdir(cache_dir):
@@ -242,3 +248,16 @@ def create_gaia(repo_dir, gaia_url):
 def delete_gaia(repo_dir):
     if os.path.exists(repo_dir):
         shutil.rmtree(repo_dir)
+
+
+def update_gaia(repo_dir, gaia_url):
+    # cache dir should really be .%(repo_dir)s.cache.git
+    cache_dir = _cache_dir(repo_dir)
+    git_op(["fetch", gaia_url], workdir=cache_dir)
+    git_op(["fetch", "cache"], workdir=repo_dir)
+    git_op(["fetch", "origin"], workdir=repo_dir)
+    for branch in branch_logic.branches + ['master']:
+        #recreate_branch(repo_dir, branch, remote="origin")
+        git_op(["reset", "--hard", "HEAD"], workdir=repo_dir)
+        git_op(["checkout", branch], workdir=repo_dir)
+        git_op(["merge", "--ff-only", "%s/%s" % ("origin", branch)], workdir=repo_dir)
