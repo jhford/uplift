@@ -3,13 +3,11 @@ setup(
     name = "gaia_uplift",
     version = "0",
     packages = find_packages(),
-
     entry_points = {
         'console_scripts': [
             'uplift = gaia_uplift.driver:main'
         ]
     },
-
     install_requires = ["isodate",
                         "requests",
                         "PrettyTable"],
@@ -21,6 +19,5 @@ setup(
     license = "",
     keywords = "hello world example examples",
     url = "",   # project home page, if any
-
     # could also include long_description, download_url, classifiers, etc.
 )
