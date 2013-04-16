@@ -8,23 +8,28 @@ import json
 import copy
 import os
 
+import requests
+
 import util
 
 
 class FailedBZAPICall(Exception): pass
 class InvalidBZAPICredentials(Exception): pass
 
-api_version = "1.2"
+api_version = "1.3"
 api_host = "https://api-dev.bugzilla.mozilla.org/%s/" % api_version
 
 
 
-def do_query(url):
+def do_query(url, method='get', **kwargs):
     """Light wrapper around the BzAPI which takes an API url,
     fetches the data then returns the data as a Python
     dictionary.  Only API errors are caught, and those are
     raised as FailedBZAPICall exceptions"""
-    json_data = json.loads(urllib.urlopen(url).read())
+
+    response = requests.request(method, url, **kwargs)
+    print response.content
+    json_data = response.json()
     if json_data.get('error', 0) != 0:
         raise FailedBZAPICall(json_data['message'])
     with open('api-calls.log', "ab+") as f:
@@ -106,8 +111,14 @@ def fetch_bug(bug_id, include_fields=None):
 def fetch_complete_bug(bug_id):
     return fetch_bug(bug_id, "_default,comments")
 
-def post_comment(bug_id, comment):
-    """EXPERIMENTAL"""
-    bug_data = fetch_bug(bug_id)
-    update_token = bug_data['update_token']
-    print update_token
+def update_bug(bug_id, comment=None, values=None):
+    bug_data = fetch_complete_bug(bug_id)
+    updates = {
+        'token': bug_data['update_token'],
+    }
+    if comment:
+        updates['comments'] = [{'text': comment}]
+    updates.update(values)
+    url = compute_url({}, "bug/%s" % bug_id)
+    result = do_query(url, "put", data=json.dumps(updates))
+
