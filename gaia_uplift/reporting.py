@@ -190,13 +190,13 @@ def good_bug_comment(repo_dir, bug_id, bug):
     values = bug['flags_to_set']
     comment = ""
     for commit in bug['commits']:
-        comment = "Uplifted %s to:\n" % bug_id
+        comment = "Uplifted %s to:\n" % commit
         for branch in bug['uplift_status'][commit]['success'].keys():
             branch_commit = bug['uplift_status'][commit]['success'][branch]
             if branch_commit == commit:
-                comment.append("%s already had this commit\n" % branch)
+                comment += "%s already had this commit\n" % branch
             else:
-                comment.append("%s: %s\n" % (branch, branch_commit))
+                comment += "%s: %s\n" % (branch, branch_commit)
     try:
         bzapi.update_bug(bug_id, comment=comment, values=values)
     except:
@@ -247,7 +247,7 @@ def ugly_bug_comment(repo_dir, bug_id, bug):
     comment = "This bug was partially uplifted.\n\n"
     bottom_of_comment = "\n"
     for commit in bug['commits']:
-        comment += "Uplifted %s to:\n" % bug_id
+        comment += "Uplifted %s to:\n" % commit
         for branch in bug['uplift_status'][commit]['success'].keys():
             branch_commit = bug['uplift_status'][commit]['success'][branch]
             if branch_commit == commit:

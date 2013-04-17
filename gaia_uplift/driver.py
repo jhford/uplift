@@ -2,6 +2,7 @@
 
 import os
 import sys
+import json
 
 import uplift
 import git
@@ -59,6 +60,10 @@ def main():
 
         if push_info:
             reporting.comment(gaia_path, uplift_report)
+    elif cmd == 'comments':
+        with open(uplift.uplift_report_file, 'rb') as f:
+            uplift_report = json.load(f)
+        reporting.comment(gaia_path, uplift_report)
     elif cmd == 'reset-gaia':
         git.delete_gaia(gaia_path)
         git.create_gaia(gaia_path, gaia_url)

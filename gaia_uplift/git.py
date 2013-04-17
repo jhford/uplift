@@ -253,9 +253,6 @@ def push(repo_dir, remote="origin", branches=[], dry_run=True):
     return push_data
 
 
-
-
-
 def recreate_branch(repo_dir, branch, remote="origin"):
     if branch in branches(repo_dir):
         git_op(["branch", "-D", branch], workdir=repo_dir)
@@ -264,13 +261,11 @@ def recreate_branch(repo_dir, branch, remote="origin"):
 
 def _cache_dir(repo_dir):
     repo_dir_p, repo_dir_t = os.path.split(repo_dir.rstrip(os.sep))
-    # cache dir should really be .%(repo_dir)s.cache.git
     return os.path.join(repo_dir_p, ".%s.cache.git" % repo_dir_t)
 
 
 def create_gaia(repo_dir, gaia_url):
     repo_dir_p = os.path.split(repo_dir.rstrip(os.sep))[0]
-    # cache dir should really be .%(repo_dir)s.cache.git
     cache_dir = _cache_dir(repo_dir)
 
     # Initialize or update the cached copy of gaia
@@ -304,8 +299,7 @@ def delete_gaia(repo_dir):
 
 def update_gaia(repo_dir, gaia_url):
     if not os.path.exists(repo_dir):
-        print "Gaia doesn't exist yet, creating it"
-    # cache dir should really be .%(repo_dir)s.cache.git
+        print "Gaia doesn't exist yet"
     cache_dir = _cache_dir(repo_dir)
     git_op(["fetch", gaia_url], workdir=cache_dir)
     git_op(["fetch", "cache"], workdir=repo_dir)
