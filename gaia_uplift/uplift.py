@@ -170,7 +170,8 @@ def push(repo_dir):
         if user_input == 'push':
             actual_push_info = git.push(
                 repo_dir, remote="origin",
-                branches=branch_logic.branches)
+                branches=branch_logic.branches,
+                dry_run=False)
             break
         elif user_input == 'cancel':
             print "Cancelling"
