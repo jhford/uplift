@@ -165,14 +165,16 @@ def build_uplift_requirements(repo_dir, queries):
 
 
 def _display_push_info(push_info):
-    pass
+    for branch in push_info['branches'].keys():
+        start, end = push_info['branches'][branch]
+        print "%s: %s..%s" % (branch, start, end)
 
 
 def push(repo_dir):
     preview_push_info = git.push(
         repo_dir, remote="origin",
         branches=branch_logic.branches, dry_run=True)
-    print "This is what you'd be pushing:"
+    print "This is what you'd be pushing: "
     _display_push_info(preview_push_info)
     prompt = "push, a branch name or cancel: "
     user_input = raw_input(prompt).strip()
@@ -188,6 +190,10 @@ def push(repo_dir):
             print "Cancelling"
             break
         elif user_input in branch_logic.branches:
+            print "Commits that will be pushed to %s on branch %s" % (preview_push_info['url'], user_input)
+            print "="*80
+            start, end = preview_push_info['branches'][user_input]
+            git.git_op(['log', user_input, '--oneline', '%s..%s' % (start, end)], workdir=repo_dir)
             print "not done yet, would show log for %s" % user_input
         else:
             user_input = raw_input(prompt).strip()
