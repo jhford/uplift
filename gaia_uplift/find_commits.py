@@ -43,7 +43,6 @@ def guess_from_comments(repo_dir, upstream, comments):
                 d = m.groupdict()
                 if d.has_key('id'):
                     commit_id = d['id']
-                    print "Found a guess"
                     if git.git_object_type(repo_dir, commit_id) == 'commit':
                         if git.get_rev(repo_dir, commit_id) and git.commit_on_branch(repo_dir, commit_id, upstream):
                             if not commits.has_key(commit_id):
@@ -223,7 +222,10 @@ def for_all_bugs(repo_dir, requirements, upstream="master"):
             break
     if any_bug_has_commits and util.ask_yn("Some bugs already have commits.  Reuse them?"):
         return r
+    j=0
     for bug_id in requirements.keys():
+        j+=1
+        print "Bug %d of %d" % (j, len(requirements))
         if len(r[bug_id].get('commits', [])) > 0:
             print "Found commits ['%s'] for bug %s" % ("', '".join(r[bug_id]['commits']), bug_id)
             if not util.ask_yn("Would you like to reuse these commits?"):
