@@ -243,7 +243,6 @@ def push(repo_dir, remote="origin", branches=[], dry_run=True):
         'url': lines[0].strip().lstrip('To ')
     }
     for push_item in lines[1:-1]:
-        print push_item
         flag, ref_spec, rev_range = push_item.split('\t')
         if flag != ' ':
             continue
