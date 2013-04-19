@@ -79,6 +79,17 @@ def uplift(repo_dir, gaia_url, requirements, start_fresh=True):
         1: which branches the patches were uplifted to
         2: which branches failed
         3: which branches have open dependencies"""
+    if start_fresh:
+        git.delete_gaia(repo_dir)
+    t=util.time_start()
+    if os.path.exists(repo_dir):
+        print "Updating Gaia"
+        git.update_gaia(repo_dir, gaia_url)
+        print "Updated Gaia in %0.2f seconds" % util.time_end(t)
+    else:
+        print "Creating Gaia"
+        git.create_gaia(repo_dir, gaia_url) # This is sadly broken
+        print "Created Gaia in %0.2f seconds" % util.time_end(t)
 
     with_commits = find_commits.for_all_bugs(repo_dir, requirements)
     write_cache_file(with_commits, requirements_cache_file)
