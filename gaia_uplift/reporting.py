@@ -214,7 +214,7 @@ def bad_bug_comment(repo_dir, bug_id, bug):
     skip_this_comment = False
     bug_data = bzapi.fetch_complete_bug(bug_id)
     for c in [x['text'] for x in bug_data['comments']]:
-        if 'git cherry-pick' in c:
+        if c and 'git cherry-pick' in c:
             skip_this_comment = True
     comment = [
          "I was not able to uplift this bug to %s.  If this bug has dependencies " % util.e_join(bug['needed_on']) +
