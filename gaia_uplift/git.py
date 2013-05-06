@@ -269,13 +269,16 @@ def create_gaia(repo_dir, gaia_url):
 
     # Initialize or update the cached copy of gaia
     if not os.path.isdir(cache_dir):
+        print "Initial clone of Gaia cache directory"
         git_op(["clone", "--mirror", gaia_url, cache_dir],
                workdir=os.path.split(cache_dir.rstrip(os.sep))[0])
     else:
+        print "Fetching updates to Gaia cache directory"
         git_op(["fetch", gaia_url], workdir=cache_dir)
 
     # Because we do all of the repository creation locally (i.e. cheaply), we don't
     # really want to risk having bad commits left around, so we delete the repo
+    print "Deleting Gaia scratch directory"
     delete_gaia(repo_dir)
 
     # Let's create the working copy of gaia.  We want to clone it from the
@@ -283,9 +286,11 @@ def create_gaia(repo_dir, gaia_url):
     # copy by fetching from the actual remote.  We fetch the actual remote's
     # references because we want to create a copy of gaia that doesn't need
     # to use the cached copy when pushing changes
+    print "Cloning Gaia scratch from cache"
     git_op(["clone", "file://%s" % cache_dir, repo_dir], workdir=repo_dir_p)
     git_op(["remote", "rename", "origin", "cache"], workdir=repo_dir)
     git_op(["remote", "add", "origin", gaia_url], workdir=repo_dir)
+    print "Fetching remote references from remote"
     git_op(["fetch", "origin"], workdir=repo_dir)
     for branch in branch_logic.branches + ['master']:
         recreate_branch(repo_dir, branch, remote="origin")

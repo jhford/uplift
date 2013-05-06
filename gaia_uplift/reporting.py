@@ -278,9 +278,12 @@ def comment(repo_dir, report):
     ugly = [] # Partial uplift
     good, bad, ugly = classify_gbu(report)
     for bug_id in good:
+        print "Commenting on good bug %s" % bug_id
         good_bug_comment(repo_dir, bug_id, report[bug_id])
     for bug_id in bad:
+        print "Commenting on bad bug %s" % bug_id
         bad_bug_comment(repo_dir, bug_id, report[bug_id])
     for bug_id in ugly:
+        print "Commenting on ugly bug %s" % bug_id
         ugly_bug_comment(repo_dir, bug_id, report[bug_id])
 
