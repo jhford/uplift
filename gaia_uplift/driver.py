@@ -3,6 +3,12 @@
 import os
 import sys
 import json
+try:
+    import signal
+    print "Ignoring Control-C"
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+except:
+    print "Careful about Control-C"
 
 import uplift
 import git
