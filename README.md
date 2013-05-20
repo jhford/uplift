@@ -49,3 +49,10 @@
      * done - Finish associating uplift shas with this bug.
      */
     uplift uplift
+
+    /**
+     * Other Commands
+     */
+    uplift comments # Redo comments using entire contents uplift_report.json
+    uplift reset-gaia # Delete gaia scratch copy and recreate it using cache
+    uplift sort-commits # Given a list of commits, sort them
