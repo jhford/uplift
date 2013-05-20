@@ -8,6 +8,13 @@
 ## Running uplift
 
     /**
+     * Create the uplift environment.
+     */
+    git clone http://github.com/jhford/uplift.git uplift && cd uplift
+    virtualenv .
+    python setup.py develop
+
+    /**
      * Initialize the uplift environment.
      */
     source bin/activate
