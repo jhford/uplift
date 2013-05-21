@@ -18,20 +18,18 @@ import reporting
 
 # Should be smarter about these cache files and either manage them in sets
 # or use a single file which contains *all* the information only ever added to
-requirements_cache_file = os.path.abspath("requirements.json")
+requirements_file = os.path.abspath("requirements.json")
 uplift_report_file = os.path.abspath("uplift_report.json")
 skip_bugs_file = os.path.abspath("skip_bugs.json")
 
 def read_cache_file(name, path):
     if os.path.exists(path) and util.ask_yn("Found %s cached data (%s).\nLoad this file?" % (name, path)):
-        with open(path, 'rb') as f:
-            return json.load(f)
+        return util.read_json(path)
     return None
 
 
 def write_cache_file(data, path):
-    with open(path, 'wb+') as f:
-        json.dump(data, f, indent=2, sort_keys=True)
+    util.write_json(path, data)
 
 
 def find_bugs(queries):
@@ -93,7 +91,7 @@ def uplift(repo_dir, gaia_url, requirements, start_fresh=True):
         print "Created Gaia in %0.2f seconds" % util.time_end(t)
 
     with_commits = find_commits.for_all_bugs(repo_dir, requirements)
-    write_cache_file(with_commits, requirements_cache_file)
+    write_cache_file(with_commits, requirements_file)
     ordered_commits = order_commits(repo_dir, with_commits)
 
     uplift = dict([(x, {}) for x in ordered_commits])
@@ -148,18 +146,18 @@ def is_skipable(bug_id, filename):
     return bug_id in util.read_json(filename)
 
 def build_uplift_requirements(repo_dir, queries):
-    bug_info = read_cache_file("uplift information", requirements_cache_file)
+    bug_info = read_cache_file("uplift information", requirements_file)
     if not bug_info:
         bug_info = {}
         bugs = dict([(x, bzapi.fetch_bug(x)) for x in find_bugs(queries)])
-        for bug_id in [x for x in bugs.keys() if not is_skipable(x)]:
+        for bug_id in [x for x in bugs.keys() if not is_skipable(x, skip_bugs_file)]:
 
             b = bug_info[bug_id] = {}
             bug = bugs[bug_id]
             b['needed_on'] = branch_logic.needed_on_branches(bug)
             b['already_fixed_on'] = branch_logic.fixed_on_branches(bug)
             b['summary'] = bug['summary']
-        write_cache_file(bug_info, requirements_cache_file)
+        write_cache_file(bug_info, requirements_file)
     return bug_info
 
 
