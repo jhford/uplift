@@ -135,12 +135,15 @@ def uplift(repo_dir, gaia_url, requirements, start_fresh=True):
     return uplift_report
 
 
-def skip_bug(bug_id):
-    with open('skip_bugs.json', 'rb+') as f:
-        data=json.load(f)
+def skip_bug(bug_id, filename='skip_bugs.json'):
+    if os.path.isfile(filename):
+        with open('skip_bugs.json', 'rb+') as f:
+            data=json.load(f)
+    else:
+        data=[]
+    with open('skip_bugs.json', 'wb+') as f:
         new_data = [int(bug_id)] + [int(x) for x in data]
-        f.seek(0)
-        json.dump(sorted(new_data), f, indent=2)
+        json.dump(sorted(set(new_data)), f, indent=2)
 
 
 def is_skipable(bug_id):
