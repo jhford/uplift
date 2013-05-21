@@ -200,13 +200,17 @@ def for_one_bug(repo_dir, bug_id, upstream):
                 _list_commits()
                 del_input = raw_input(del_prompt).strip()
         elif git.valid_id(user_input):
-            try:
-                full_rev = git.get_rev(repo_dir, id=user_input)
-                print "appending %s" % full_rev
-                commits.append(full_rev)
+            if not git.commit_on_branch(repo_dir, user_input, upstream):
+                print "Commit %s is not on the upstream branch '%s'" % (user_input, upstream)
                 _list_commits()
-            except sp.CalledProcessError, e:
-                print "This sha1 commit id (%s) is valid but not found in %s" % (user_input, repo_dir)
+            else:
+                try:
+                    full_rev = git.get_rev(repo_dir, id=user_input)
+                    print "appending %s" % full_rev
+                    commits.append(full_rev)
+                    _list_commits()
+                except sp.CalledProcessError, e:
+                    print "This sha1 commit id (%s) is valid but not found in %s" % (user_input, repo_dir)
         else:
             print "This is not a sha1 commit id: %s" % user_input
         user_input = raw_input(prompt % len(commits)).strip()
