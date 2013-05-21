@@ -20,19 +20,32 @@ api_version = "1.3"
 api_host = "https://api-dev.bugzilla.mozilla.org/%s/" % api_version
 
 
-def do_query(url, method='get', **kwargs):
+def _raw_query(method, url, **kwargs):
+    r = requests.request(method, url, **kwargs)
+    with open('api-calls.log', "ab+") as f:
+        f.write("Status: %i URL: %s\n" % (r.status_code, url))
+    if r.status_code == requests.codes.ok:
+        data = r.json()
+        if data.get('error', 0) != 0:
+            raise FailedBZAPICall(data['message'])
+        return data
+    else:
+        r.raise_for_status()
+
+
+def do_query(url, method='get', retry=False, attempts=5, **kwargs):
     """Light wrapper around the BzAPI which takes an API url,
     fetches the data then returns the data as a Python
     dictionary.  Only API errors are caught, and those are
     raised as FailedBZAPICall exceptions"""
 
-    response = requests.request(method, url, **kwargs)
-    json_data = response.json()
-    if json_data.get('error', 0) != 0:
-        raise FailedBZAPICall(json_data['message'])
-    with open('api-calls.log', "ab+") as f:
-        f.write("Status: %i URL: %s\n" % (response.status_code, url))
-    return json_data
+    for i in range(0, attempts):
+        try:
+            json_data = _raw_query(method, url, **kwargs)
+            return json_data
+        except Exception, e:
+            print "Query attempt %i failed: %s" % (i, e)
+    raise e
 
 
 def flatten_query(query):
@@ -95,7 +108,7 @@ def search(query):
     If it's a list, then the keys which match items in fields are returned"""
     print "Running Bugzilla API query"
     t = util.time_start()
-    data = do_query(compute_url(query, 'bug'))
+    data = do_query(compute_url(query, 'bug'), retry=True)
     print "API query found %d bugs in %0.2f seconds" % (len(data.get('bugs', [])), util.time_end(t))
     return [x['id'] for x in data['bugs']]
 
@@ -105,7 +118,7 @@ def fetch_bug(bug_id, include_fields=None):
     if include_fields:
         query['include_fields'] = include_fields
     t = util.time_start()
-    bug_data = do_query(compute_url(query, 'bug/%s' % bug_id))
+    bug_data = do_query(compute_url(query, 'bug/%s' % bug_id), retry=True)
     print "Fetched bug %s in %0.2f seconds" % (bug_id, util.time_end(t))
     return bug_data
 
