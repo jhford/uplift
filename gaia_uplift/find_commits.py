@@ -240,9 +240,7 @@ def for_all_bugs(repo_dir, requirements, upstream="master"):
         else:
             r[bug_id]['commits'] = for_one_bug(repo_dir, bug_id, upstream)
 
-        # Save a temporary copy.  ugly!!!
-        with open("requirements-tmp.json", "wb+") as f:
-            json.dump(r, f, indent=2, sort_keys=True)
+        uplift.write_cache_file(uplift.requirements_file)
     return r
 
 
