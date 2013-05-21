@@ -20,7 +20,6 @@ api_version = "1.3"
 api_host = "https://api-dev.bugzilla.mozilla.org/%s/" % api_version
 
 
-
 def do_query(url, method='get', **kwargs):
     """Light wrapper around the BzAPI which takes an API url,
     fetches the data then returns the data as a Python
@@ -32,12 +31,15 @@ def do_query(url, method='get', **kwargs):
     if json_data.get('error', 0) != 0:
         raise FailedBZAPICall(json_data['message'])
     with open('api-calls.log', "ab+") as f:
-        f.write(url + '\n')
+        f.write("Status: %i URL: %s\n" % (response.status_code, url))
     return json_data
 
 
 def flatten_query(query):
-    fquery = {} # Flattened query
+    """Flatten a query.  Normally it's a {'key': ['val1', 'valN']} structure,
+    but we want to flatten it down to "key=valN" format.  The docs in the library
+    suggest that this should be handled, but it isn't"""
+    fquery = {}
     for k in query.keys():
         if len(query[k]) != 1:
             print >> sys.stderr, "%s has more than one value. Overwriting %s with %s" % (k, ", ".join(query[k][:-1]), query[k][-1])
@@ -45,7 +47,9 @@ def flatten_query(query):
     return fquery
 
 def compute_url(query, endpoint):
-    full_query = copy.deepcopy(query) # Don't want to polute passed in reference with username/password
+    """This is where we assemble the query.  We add in the BZ credentials
+    here so that they don't end up in other parts of the program"""
+    full_query = copy.deepcopy(query)
     full_query.update(load_credentials())
     return "%s%s%s?%s" % (api_host, "" if api_host.endswith("/") else "/", endpoint, urllib.urlencode(full_query))
 
@@ -57,8 +61,7 @@ def load_credentials(credentials_file="~/.bzapi_credentials"):
     if not os.path.exists(cf) or os.path.isdir(cf):
         raise InvalidBZAPICredentials("credentials file is not found: %s" % cf)
     try:
-        with open(cf, 'rb') as f:
-            data = json.load(f)
+        data = util.read_json(cf)
     except IOError as ioe:
         raise InvalidBZAPICredentials("could not read credentials file: %s" % ioe)
     if data.has_key('username') and data.has_key('password'):
