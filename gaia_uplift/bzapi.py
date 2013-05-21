@@ -7,6 +7,7 @@ import urlparse
 import json
 import copy
 import os
+import time
 
 import requests
 
@@ -33,7 +34,7 @@ def _raw_query(method, url, **kwargs):
         r.raise_for_status()
 
 
-def do_query(url, method='get', retry=False, attempts=5, **kwargs):
+def do_query(url, method='get', retry=False, attempts=5, delay=2, **kwargs):
     """Light wrapper around the BzAPI which takes an API url,
     fetches the data then returns the data as a Python
     dictionary.  Only API errors are caught, and those are
@@ -45,6 +46,7 @@ def do_query(url, method='get', retry=False, attempts=5, **kwargs):
             return json_data
         except Exception, e:
             print "Query attempt %i failed: %s" % (i, e)
+            time.sleep(delay)
     raise e
 
 
