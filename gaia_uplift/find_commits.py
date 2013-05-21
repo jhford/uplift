@@ -142,7 +142,10 @@ def for_one_bug(repo_dir, bug_id, upstream):
         if user_input == "list":
             _list_commits()
         elif user_input == "skip":
-            uplift.skip_bug(bug_id)
+            print "Adding a bug to the skipped bug list means that you will never"
+            print "see it again.  This is persisted between executions of this program"
+            if util.ask_yn("Add bug to skipped bug list?"):
+                uplift.skip_bug(bug_id)
             break
         elif user_input == "delete-all":
             commits = []
