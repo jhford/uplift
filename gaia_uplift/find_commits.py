@@ -221,26 +221,47 @@ def for_one_bug(repo_dir, bug_id, upstream):
 
 
 def for_all_bugs(repo_dir, requirements, upstream="master"):
-    r = copy.deepcopy(requirements)
+    # Let's see if we have any commits in the req file.
     any_bug_has_commits = False
-    for bug_id in r:
-        if len(r[bug_id].get('commits', [])) > 0:
+    bugs_without_commits = []
+    for bug_id in requirements:
+        if len(requirements[bug_id].get('commits', [])) > 0:
             any_bug_has_commits = True
-            break
-    if any_bug_has_commits and util.ask_yn("Some bugs already have commits.  Reuse them?"):
-        return r
-    j=0
-    for bug_id in requirements.keys():
-        j+=1
-        print "Bug %d of %d" % (j, len(requirements))
-        if len(r[bug_id].get('commits', [])) > 0:
-            print "Found commits ['%s'] for bug %s" % ("', '".join(r[bug_id]['commits']), bug_id)
-            if not util.ask_yn("Would you like to reuse these commits?"):
-                r[bug_id]['commits'] = for_one_bug(repo_dir, bug_id, upstream)
         else:
-            r[bug_id]['commits'] = for_one_bug(repo_dir, bug_id, upstream)
+            bugs_without_commits.append(bug_id)
 
-        uplift.write_cache_file(uplift.requirements_file)
-    return r
+    if any_bug_has_commits:
+        print "Some bugs in this requirements file already have commits."
+        # reuse is use the existing commits, don't ask for more.
+        # add is use the existing commits for bugs that have no commits, ignore others
+        # delete will remove the commits from the requirements dictionary
+        prompt = "Enter 'reuse', 'add' or 'delete': "
+        user_input = raw_input(prompt).strip()
+        while user_input not in ('reuse', 'add', 'delete'):
+            user_input = raw_input(prompt).strip()
+        
+        if user_input == 'reuse':
+            bugs_to_find = [] # just use what's in the file
+        elif user_input == 'add':
+            bugs_to_find = bugs_without_commits # Only ask for commits for commit-less bugs
+        elif user_input == 'delete':
+            # Delete the commits that are in the requirements file
+            for bug_id in requirements.keys():
+                del requirements[bug_id]['commits']
+            uplift.write_cache_file(requirements, uplift.requirements_file)
+            bugs_to_find = requirements.keys()
+        else:
+            raise Exception("Huh?")
+    else:
+        bugs_to_find = requirements.keys()
+
+    j=0
+    for bug_id in bugs_to_find:
+        j+=1
+        print "=" * 80
+        print "Bug %d of %d" % (j, len(bugs_to_find))
+        requirements[bug_id]['commits'] = for_one_bug(repo_dir, bug_id, upstream)
+        uplift.write_cache_file(requirements, uplift.requirements_file)
+    return requirements
 
 
