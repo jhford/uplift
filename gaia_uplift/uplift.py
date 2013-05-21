@@ -140,7 +140,7 @@ def skip_bug(bug_id):
         data=json.load(f)
         new_data = [int(bug_id)] + [int(x) for x in data]
         f.seek(0)
-        json.dump(sorted(data), f, indent=2)
+        json.dump(sorted(new_data), f, indent=2)
 
 
 def is_skipable(bug_id):
