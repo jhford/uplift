@@ -20,6 +20,7 @@ import reporting
 # or use a single file which contains *all* the information only ever added to
 requirements_cache_file = os.path.abspath("requirements.json")
 uplift_report_file = os.path.abspath("uplift_report.json")
+skip_bugs_file = os.path.abspath("skip_bugs.json")
 
 def read_cache_file(name, path):
     if os.path.exists(path) and util.ask_yn("Found %s cached data (%s).\nLoad this file?" % (name, path)):
@@ -135,21 +136,16 @@ def uplift(repo_dir, gaia_url, requirements, start_fresh=True):
     return uplift_report
 
 
-def skip_bug(bug_id, filename='skip_bugs.json'):
+def skip_bug(bug_id, filename):
     if os.path.isfile(filename):
-        with open('skip_bugs.json', 'rb+') as f:
-            data=json.load(f)
+        data = util.read_json(filename)
     else:
         data=[]
-    with open('skip_bugs.json', 'wb+') as f:
-        new_data = [int(bug_id)] + [int(x) for x in data]
-        json.dump(sorted(set(new_data)), f, indent=2)
+    util.write_json(filename, sorted(set([int(bug_id)] + [int(x) for x in data])))
 
 
-def is_skipable(bug_id):
-    with open('skip_bugs.json', 'rb+') as f:
-        data = json.load(f)
-    return bug_id in data
+def is_skipable(bug_id, filename):
+    return bug_id in util.read_json(filename)
 
 def build_uplift_requirements(repo_dir, queries):
     bug_info = read_cache_file("uplift information", requirements_cache_file)

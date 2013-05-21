@@ -1,4 +1,6 @@
 import time
+import os
+import json
 
 def e_join(l, t="and", s=", "):
     """Join a list of strings in an intelligble way for display
@@ -37,3 +39,16 @@ def ask_yn(q, default=True):
         return False
     else:
         raise Exception("This question asker is busted")
+
+
+def read_json(path):
+    if os.path.exists(path):
+        with open(path, 'rb') as f:
+            return json.load(f)
+    return None
+
+
+def write_json(path, data):
+    with open(path, 'wb+') as f:
+        json.dump(data, f, indent=2, sort_keys=True)
+
