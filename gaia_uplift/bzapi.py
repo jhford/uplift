@@ -126,7 +126,7 @@ def fetch_bug(bug_id, include_fields=None):
 
 
 def fetch_complete_bug(bug_id):
-    return fetch_bug(bug_id, "_default,assigned_to,comments,flags")
+    return fetch_bug(bug_id, "_all")
 
 def update_bug(bug_id, comment=None, values=None, flags=None):
     bug_data = fetch_complete_bug(bug_id)

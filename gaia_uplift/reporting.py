@@ -235,16 +235,19 @@ def bad_bug_comment(repo_dir, bug_id, bug):
         return
 
     # If there is an assignee, try to needinfo them!
-    flags = bug_data['flags']
-    if 'assignee' in bug_data:
-        requestee = bug_data['assignee']['name']
+    if bug_data.has_key('flags'):
+        flags = bug_data['flags']
+    else:
+        flags = []
+    if 'assigned_to' in bug_data.keys():
+        requestee = bug_data['assigned_to']
         if requestee:
             flags.append({
                 'name': 'needinfo',
                 'requestee': requestee,
-                'status': '?'
+                'status': '?',
+                'type_id': '800'
             })
-
 
     try:
         bzapi.update_bug(bug_id, comment=comment, values={}, flags=flags)
