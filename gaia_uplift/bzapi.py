@@ -126,15 +126,17 @@ def fetch_bug(bug_id, include_fields=None):
 
 
 def fetch_complete_bug(bug_id):
-    return fetch_bug(bug_id, "_default,comments")
+    return fetch_bug(bug_id, "_default,assigned_to,comments,flags")
 
-def update_bug(bug_id, comment=None, values=None):
+def update_bug(bug_id, comment=None, values=None, flags=None):
     bug_data = fetch_complete_bug(bug_id)
     updates = {
         'token': bug_data['update_token'],
     }
     if comment:
         updates['comments'] = [{'text': comment}]
+    if flags:
+        updates['flags'] = flags
     updates.update(values)
     url = compute_url({}, "bug/%s" % bug_id)
     result = do_query(url, "put", data=json.dumps(updates))

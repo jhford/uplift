@@ -233,8 +233,21 @@ def bad_bug_comment(repo_dir, bug_id, bug):
         print comment
         print ""
         return
+
+    # If there is an assignee, try to needinfo them!
+    flags = bug_data['flags']
+    if 'assignee' in bug_data:
+        requestee = bug_data['assignee']['name']
+        if requestee:
+            flags.append({
+                'name': 'needinfo',
+                'requestee': requestee,
+                'status': '?'
+            })
+
+
     try:
-        bzapi.update_bug(bug_id, comment=comment, values={})
+        bzapi.update_bug(bug_id, comment=comment, values={}, flags=flags)
     except:
         print "=" * 80
         print "Unable to comment on bug %s, please do this:" % bug_id
