@@ -254,7 +254,7 @@ def bad_bug_comment(repo_dir, bug_id, bug):
     except:
         print "=" * 80
         print "Unable to comment on bug %s, please do this:" % bug_id
-        print "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" & bug_id
+        print "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id
         print "\nmake this this comment:"
         print comment
 
