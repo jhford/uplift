@@ -25,13 +25,16 @@ def _raw_query(method, url, **kwargs):
     r = requests.request(method, url, **kwargs)
     with open('api-calls.log', "ab+") as f:
         f.write("Status: %i URL: %s\n" % (r.status_code, url))
-    if r.status_code == requests.codes.ok:
-        data = r.json()
-        if data.get('error', 0) != 0:
-            raise FailedBZAPICall(data['message'])
-        return data
-    else:
-        r.raise_for_status()
+        if kwargs.has_key('data'):
+            f.write("DATA\n%s\n" % json.dumps(kwargs['data']))
+        if r.status_code == requests.codes.ok:
+            data = r.json()
+            if data.get('error', 0) != 0:
+                f.write("BZAPI ERROR:\n%s\n" % data['error'])
+                raise FailedBZAPICall(data['message'])
+            return data
+        else:
+            r.raise_for_status()
 
 
 def do_query(url, method='get', retry=False, attempts=5, delay=2, **kwargs):
