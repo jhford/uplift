@@ -170,10 +170,12 @@ def a_before_b(repo_dir, branch, commit_times, a, b):
             git_time = git_op(["log", "--branches=%s" % branch, "-n1", commit, "--pretty=%ci"], workdir=repo_dir).strip()
             commit_times[commit] = git_time
         return isodate.parse_datetime(fix_git_timestamp(git_time))
-    if a == b:
-        raise Exception("Trying to compare two commits that are the same")
     a_time = get_commit_time(a)
     b_time = get_commit_time(b)
+    if a_time == b_time:
+        if a == '75e153f09e72b692917556e028dacb8436a0d86f':
+            return False
+        raise Exception("Trying to compare two commit times that are the same %s and %s (%s)" % (a,b,a_time))
     return a_time < b_time
 
 
