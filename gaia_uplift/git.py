@@ -173,8 +173,6 @@ def a_before_b(repo_dir, branch, commit_times, a, b):
     a_time = get_commit_time(a)
     b_time = get_commit_time(b)
     if a_time == b_time:
-        if a == '75e153f09e72b692917556e028dacb8436a0d86f':
-            return False
         raise Exception("Trying to compare two commit times that are the same %s and %s (%s)" % (a,b,a_time))
     return a_time < b_time
 
