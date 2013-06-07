@@ -263,7 +263,8 @@ def ugly_bug_comment(repo_dir, bug_id, bug):
     comment = "This bug was partially uplifted.\n\n"
     bottom_of_comment = "\n"
     for commit in bug['commits']:
-        comment += "Uplifted %s to:\n" % commit
+        if len(bug['uplift_status'][commit]['success'].keys()) > 0:
+            comment += "Uplifted %s to:\n" % commit
         for branch in bug['uplift_status'][commit]['success'].keys():
             branch_commit = bug['uplift_status'][commit]['success'][branch]
             if branch_commit == commit:
