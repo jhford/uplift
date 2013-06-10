@@ -143,10 +143,15 @@ def skip_bug(bug_id, filename):
 
 
 def is_skipable(bug_id, filename):
+    # This is a bad idea.  The program should really use integer bug ids everywhere
+    _bi = int(bug_id)
     skip_bugs = util.read_json(filename)
     if not skip_bugs:
         skip_bugs = []
-    return bug_id in skip_bugs
+    for skip_bug in skip_bugs:
+        if _bi == skip_bug:
+            return True
+    return False
 
 def build_uplift_requirements(repo_dir, queries):
     bug_info = read_cache_file("uplift information", requirements_file)
