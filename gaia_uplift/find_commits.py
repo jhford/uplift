@@ -145,7 +145,7 @@ def for_one_bug(repo_dir, bug_id, upstream):
             print "Adding a bug to the skipped bug list means that you will never"
             print "see it again.  This is persisted between executions of this program"
             if util.ask_yn("Add bug to skipped bug list?"):
-                uplift.skip_bug(bug_id, uplift.skip_bugs_file)
+                uplift.skip_bug(bug_id)
             break
         elif user_input == "delete-all":
             commits = []
@@ -255,11 +255,12 @@ def for_all_bugs(repo_dir, requirements, upstream="master"):
     else:
         bugs_to_find = requirements.keys()
 
+    pruned_bugs_to_find = [x for x in bugs_to_find if not uplift.is_skipable(x)]
     j=0
-    for bug_id in bugs_to_find:
+    for bug_id in sorted(pruned_bugs_to_find):
         j+=1
         print "=" * 80
-        print "Bug %d of %d" % (j, len(bugs_to_find))
+        print "Bug %d of %d" % (j, len(pruned_bugs_to_find))
         requirements[bug_id]['commits'] = for_one_bug(repo_dir, bug_id, upstream)
         uplift.write_cache_file(requirements, uplift.requirements_file)
     return requirements

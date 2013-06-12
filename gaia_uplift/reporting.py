@@ -5,6 +5,7 @@ import branch_logic
 import util
 import git
 import bzapi
+import uplift
 
 
 def trim_words(s, max=90):
@@ -24,7 +25,7 @@ def display_uplift_requirements(requirements, max_summary=90):
     t = pt.PrettyTable(headers, sortby="Bug")
     t.align['Bug'] = "l"
     t.align['Summary'] = "l"
-    for bug_id in requirements.keys():
+    for bug_id in [x for x in requirements.keys() if not uplift.is_skipable(x)]:
         bug = requirements[bug_id]
         row = [bug_id]
         needed_on = bug['needed_on']
@@ -48,7 +49,7 @@ def display_uplift_report(report, max_summary=90):
     t = pt.PrettyTable(headers, sortby="Bug")
     t.align['Bug'] = "l"
     t.align['Summary'] = "l"
-    for bug_id in report.keys():
+    for bug_id in [x for x in report.keys() if not uplift.is_skipable(x)]:
         bug = report[bug_id]
         row = [bug_id]
         master_commits = bug['commits']

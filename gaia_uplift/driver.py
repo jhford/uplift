@@ -36,12 +36,10 @@ def main():
         bugs = uplift.build_uplift_requirements(gaia_path, queries)
         print "\n\nRequirements for Bug uplift:"
         print reporting.display_uplift_requirements(bugs)
-        print "%d bugs" % len(bugs)
     elif cmd == 'uplift':
         requirements = uplift.build_uplift_requirements(gaia_path, queries)
         print "\n\nUplift requirements:"
         print reporting.display_uplift_requirements(requirements)
-        print "%d bugs" % len(requirements)
         uplift_report = uplift.uplift(gaia_path, gaia_url, requirements)
         with open("log", "ab+") as l:
             l.write("STARTING_NEW_UPLIFT\n")
@@ -49,7 +47,6 @@ def main():
             l.write("\n\n")
             for f in (sys.stdout, l):
                 print >> f, reporting.display_uplift_report(uplift_report)
-                print "%d bugs" % len(uplift_report)
             print >> l, reporting.display_uplift_comments(gaia_path, uplift_report)
 
         push_info = None

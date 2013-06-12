@@ -134,18 +134,18 @@ def uplift(repo_dir, gaia_url, requirements, start_fresh=True):
     return uplift_report
 
 
-def skip_bug(bug_id, filename):
-    if os.path.isfile(filename):
-        data = util.read_json(filename)
+def skip_bug(bug_id):
+    if os.path.isfile(skip_bugs_file):
+        data = util.read_json(skip_bugs_file)
     else:
         data=[]
-    util.write_json(filename, sorted(set([int(bug_id)] + [int(x) for x in data])))
+    util.write_json(skip_bugs_file, sorted(set([int(bug_id)] + [int(x) for x in data])))
 
 
-def is_skipable(bug_id, filename):
+def is_skipable(bug_id):
     # This is a bad idea.  The program should really use integer bug ids everywhere
     _bi = int(bug_id)
-    skip_bugs = util.read_json(filename)
+    skip_bugs = util.read_json(skip_bugs_file)
     if not skip_bugs:
         skip_bugs = []
     for skip_bug in skip_bugs:
@@ -158,7 +158,7 @@ def build_uplift_requirements(repo_dir, queries):
     if not bug_info:
         bug_info = {}
         bugs = dict([(x, bzapi.fetch_bug(x)) for x in find_bugs(queries)])
-        for bug_id in [x for x in bugs.keys() if not is_skipable(x, skip_bugs_file)]:
+        for bug_id in [x for x in bugs.keys() if not is_skipable(x)]:
             b = bug_info[bug_id] = {}
             bug = bugs[bug_id]
             b['needed_on'] = branch_logic.needed_on_branches(bug)
