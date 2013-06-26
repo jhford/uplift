@@ -46,7 +46,8 @@ def find_bugs(queries):
 def order_commits(repo_dir, requirements):
     commits = []
     for bug_id in requirements.keys():
-        commits.extend(requirements[bug_id]['commits'])
+        if requirements[bug_id].has_key('commits'):
+            commits.extend(requirements[bug_id]['commits'])
     return git.sort_commits(repo_dir, commits, "master")
 
 
@@ -90,7 +91,12 @@ def uplift(repo_dir, gaia_url, requirements, start_fresh=True):
         git.create_gaia(repo_dir, gaia_url) # This is sadly broken
         print "Created Gaia in %0.2f seconds" % util.time_end(t)
 
-    with_commits = find_commits.for_all_bugs(repo_dir, requirements)
+    all_bugs = find_commits.for_all_bugs(repo_dir, requirements)
+    with_commits = {}
+    for bug_id in all_bugs.keys():
+        if all_bugs[bug_id].has_key('commits'):
+            with_commits[bug_id] = all_bugs[bug_id]
+
     write_cache_file(with_commits, requirements_file)
     ordered_commits = order_commits(repo_dir, with_commits)
 
