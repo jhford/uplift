@@ -42,7 +42,7 @@ def merge(repo_dir, gaia_url, branch_to, branch_from):
         s,e = info['branches'][branch]
         print "  %s: %s..%s" % (branch,s,e)
     if util.ask_yn("Push for realises?"):
-        info = git.push(repo_dir, remote="origin", branches=[branch_to])
+        info = git.push(repo_dir, remote="origin", branches=[branch_to], dry_run=False)
         print "Pushed to %s" % info['url']
         for branch in info['branches'].keys():
             s,e = info['branches'][branch]
