@@ -113,6 +113,33 @@ def determine_cherry_pick_master_number(repo_dir, commit, upstream):
         return None
 
 
+def checkout(repo_dir, commitish=None, tracking=None, branch_name=None, files=None):
+    cmd = ["checkout"]
+    if tracking:
+        cmd.extend(["-t", tracking])
+    if branch_name:
+        cmd.extend(["-b", branch_name])
+    if commitish:
+        cmd.append(commitish)
+    if files:
+        cmd.append("--")
+        cmd.extend(files)
+    git_op(cmd, workdir=repo_dir)
+
+
+def merge(repo_dir, branch_from, strategy=None, strategy_options=None, ff_only=False):
+    cmd = ["merge"]
+    if ff_only:
+        cmd.append("--ff-only")
+    if strategy:
+        cmd.extend(["-s", strategy])
+    if strategy_options:
+        for opt in strategy_options:
+            cmd.extend(["-X", opt])
+    cmd.append(branch_from)
+    git_op(cmd, workdir=repo_dir)
+
+
 def cherry_pick(repo_dir, commit, branch, upstream='master'):
     """Perform a cherry pick of 'commit' from 'branch'.  If there is more than
     one parent for the commit, this function takes the first commit on the 'upstream'
@@ -144,6 +171,15 @@ def cherry_pick(repo_dir, commit, branch, upstream='master'):
             return None
     return get_rev(repo_dir)
 
+
+def log(repo_dir, commitish, number=None, pretty=None):
+    cmd = ["log", commitish]
+    if number:
+        cmd.append("-n%d" % number)
+    if pretty:
+        cmd.append("--pretty=%s" % pretty)
+
+    return git_op(cmd, workdir=repo_dir)
 
 def reset(repo_dir, id="HEAD", hard=True):
     command = ["reset"]
@@ -274,7 +310,7 @@ def create_gaia(repo_dir, gaia_url):
                workdir=os.path.split(cache_dir.rstrip(os.sep))[0])
     else:
         print "Fetching updates to Gaia cache directory"
-        git_op(["fetch", gaia_url], workdir=cache_dir)
+        git_op(["fetch", "--all"], workdir=cache_dir)
 
     # Because we do all of the repository creation locally (i.e. cheaply), we don't
     # really want to risk having bad commits left around, so we delete the repo
@@ -305,7 +341,7 @@ def update_gaia(repo_dir, gaia_url):
     if not os.path.exists(repo_dir):
         print "Gaia doesn't exist yet"
     cache_dir = _cache_dir(repo_dir)
-    git_op(["fetch", gaia_url], workdir=cache_dir)
+    git_op(["fetch", "--all"], workdir=cache_dir)
     git_op(["fetch", "cache"], workdir=repo_dir)
     git_op(["fetch", "origin"], workdir=repo_dir)
     for branch in branch_logic.branches + ['master']:

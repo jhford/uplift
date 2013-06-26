@@ -11,8 +11,10 @@ except:
     print "Careful about Control-C"
 
 import uplift
+import merge_hd
 import git
 import reporting
+import util
 
 
 gaia_path = os.path.abspath(os.path.join(os.getcwd(), 'gaia'))
@@ -30,7 +32,7 @@ def main():
         exit(1)
 
     cmd = sys.argv[1]
-    cmd_args = sys.argv[1:]
+    cmd_args = sys.argv[2:]
 
     if cmd == 'show':
         bugs = uplift.build_uplift_requirements(gaia_path, queries)
@@ -63,10 +65,14 @@ def main():
 
         if push_info:
             reporting.comment(gaia_path, uplift_report)
+    elif cmd == 'merge':
+        merge_hd.merge(gaia_path, gaia_url, cmd_args[0], cmd_args[1])
     elif cmd == 'comments':
         with open(uplift.uplift_report_file, 'rb') as f:
             uplift_report = json.load(f)
         reporting.comment(gaia_path, uplift_report)
+    elif cmd == 'merge-comments':
+        merge_hd.comment(gaia_path, cmd_args[0], cmd_args[1])
     elif cmd == 'reset-gaia':
         git.delete_gaia(gaia_path)
         git.create_gaia(gaia_path, gaia_url)
