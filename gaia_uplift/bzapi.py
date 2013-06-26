@@ -140,7 +140,8 @@ def update_bug(bug_id, comment=None, values=None, flags=None):
         updates['comments'] = [{'text': comment}]
     if flags:
         updates['flags'] = flags
-    updates.update(values)
+    if values:
+        updates.update(values)
     url = compute_url({}, "bug/%s" % bug_id)
     result = do_query(url, "put", data=json.dumps(updates))
 
