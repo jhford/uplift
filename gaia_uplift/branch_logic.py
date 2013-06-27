@@ -1,7 +1,6 @@
 import bzapi
 
-#branches = ['v1-train', 'v1.1hd', 'v1.0.1']
-branches = ['v1-train', 'v1.1.0hd', 'v1.0.1']
+branches = ['v1-train', 'v1.1.0hd'] #, 'v1.0.1']
 
 def flags_to_set(branches):
     f = {}
