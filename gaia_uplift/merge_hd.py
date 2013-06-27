@@ -125,6 +125,8 @@ def comment(repo_dir, branch_to, commit_range, dry_run=False):
                     comments[bug_id] = []
                 comments[bug_id].append(commit)
 
+    failed_bugs = []
+
     for bug_id in comments.keys():
         comment = []
         flags = branch_logic.flags_to_set([branch_to])
@@ -133,5 +135,9 @@ def comment(repo_dir, branch_to, commit_range, dry_run=False):
         comment = '\n'.join(comment)
         print "Commenting on bug %s with:\ntext: %s\nflags: %s" % (bug_id, comment, flags)
         if not dry_run:
-            bzapi.update_bug(bug_id, comment=comment, values=flags)
+            try:
+                bzapi.update_bug(bug_id, comment=comment, values=flags)
+            except:
+                failed_bugs.append(bug_id)
     print "The following commits do not have a bug associated with them:\n%s" % commits_without_bugs
+    print "Failed to comment on the following bugs:\n%s" % failed_bugs
