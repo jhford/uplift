@@ -82,7 +82,7 @@ def guess_bug_id(repo_dir, commit):
     print "-" * 80
 
     if len(possible_bug_ids) == 1:
-        print "I only found one bug:\nBug %s -- %s" % (possible_bug_ids[0], bug_summaries[possible_bug_ids[0]])
+        print "I only found one bug:\nBug %s -- %s" % (possible_bug_ids[0], bug_summaries.get(possible_bug_ids[0], "Closed bug"))
         if util.ask_yn("Use it?"):
             bug_ids = possible_bug_ids
     elif len(possible_bug_ids) > 0:
