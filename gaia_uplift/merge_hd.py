@@ -74,7 +74,9 @@ def guess_bug_id(repo_dir, commit):
         possible_bug_ids.extend([int(x) for x in pattern.findall(msg)])
     possible_bug_ids = list(set(sorted(possible_bug_ids)))
     for bug in possible_bug_ids:
-        bug_summaries[bug] = bzapi.fetch_bug(bug, include_fields="summary")['summary']
+        bug_data = bzapi.fetch_bug(bug, include_fields="summary")
+        if bug_data.has_key('summary'):
+            bug_summaries[bug] = bug_data['summary']
 
     print "Commit %s has a body of:\n%s" % (commit, msg.strip())
     print "-" * 80
