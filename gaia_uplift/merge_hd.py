@@ -63,7 +63,7 @@ def guess_bug_id(repo_dir, commit):
     def _show_bugs():
         print "Possible bugs:"
         for i in range(0, len(possible_bug_ids)):
-            print "%d) Bug %s: %s" % (i, possible_bug_ids[i], bug_summaries[possible_bug_ids[i]])
+            print "%d) Bug %s: %s" % (i, possible_bug_ids[i], bug_summaries.get(possible_bug_ids[i], "Closed bug"))
 
 
     msg = git.log(repo_dir, commit, number=1, pretty="%B")
@@ -115,7 +115,10 @@ def comment(repo_dir, branch_to, commit_range, dry_run=False):
     comments = {}
     commits_without_bugs = []
 
+    i = 0
     for commit in all_commits:
+        i += 1
+        print "bug %d of %d" % (i, len(all_commits))
         bug_ids = guess_bug_id(repo_dir, commit)
         if bug_ids is None or len(bug_ids) == 0:
             commits_without_bugs.append(commit)
