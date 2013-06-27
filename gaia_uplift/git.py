@@ -15,9 +15,6 @@ class PushFailure(Exception):
 
 valid_id_regex = "[a-fA-F0-9]{7,40}"
 
-#XXX UGLY HACK OMG!
-cmd_log=open("cmds.log", "wb+")
-
 def run_cmd(command, workdir, inc_err=False, read_out=True, env=None, delete_env=None, **kwargs):
     """ Wrap subprocess in a way that I like.
     command: string or list of the command to run
@@ -40,7 +37,10 @@ def run_cmd(command, workdir, inc_err=False, read_out=True, env=None, delete_env
         func = sp.check_output
     else:
         func = sp.check_call
-    print >> cmd_log, "command: %s, workdir=%s" % (command, workdir)
+
+    # This is probably fairly slow since we open, write and close a file for every command line run
+    with open("cmds.log", "ab+") as cmd_log:
+        print >> cmd_log, "command: %s, workdir=%s, env=%s" % (command, workdir, env)
     return func(command, cwd=workdir, env=full_env, **kwargs)
 
 def git_op(command, workdir=os.getcwd(), inc_err=False, **kwargs):
