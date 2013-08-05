@@ -54,6 +54,7 @@ valid_bug_id = '(?P<bug>\d{6})'
 
 bug_id_patterns = [re.compile(x, re.I|re.M) for x in [
     'bug {,3}%s' % valid_bug_id, # This is most bugs
+    'bug[_:\- ]{,3}%s' % valid_bug_id, # This is most bugs
     '\w+/%s' % valid_bug_id, # This is the case where the bug is like jhford/123456
 ]]
 
@@ -114,6 +115,8 @@ def comment(repo_dir, branch_to, commit_range, dry_run=False):
     all_commits = git.log(repo_dir, commit_range, pretty="%H").strip().split('\n')
     comments = {}
     commits_without_bugs = []
+
+    assert branch_to in git.branches(repo_dir), "branch parameter must be a branch"
 
     i = 0
     for commit in all_commits:
