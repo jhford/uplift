@@ -4,7 +4,7 @@ set -e
 
 cd gaia
 git fetch origin
-for b in v1-train v1.1.0hd master ; do
+for b in v1.2 v1-train v1.1.0hd master ; do
     git reset --hard HEAD
     git checkout $b
     git merge --ff-only origin/$b

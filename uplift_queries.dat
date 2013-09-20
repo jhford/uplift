@@ -4,6 +4,15 @@
 # NOTE: having bug_status twice in a query breaks the API conversion, create two queries, each one should have one of the different bug_status values
 #### Goes to v1-train ####
 
+# blocking-b2g18:koi+
+https://bugzilla.mozilla.org/buglist.cgi?f10=CP&o5=nowordssubstr&f1=OP&list_id=7950540&f8=component&f0=OP&v11=NO_UPLIFT%20NPOTB%20POVB&o11=nowordssubstr&resolution=FIXED&o2=anywordssubstr&f9=CP&j7=OR&f4=OP&v5=fixed%20verified%20unaffected%20wontfix%20disabled&chfieldto=Now&query_format=advanced&chfield=resolution&j1=OR&f3=CP&chfieldfrom=2013-09-16&f2=cf_blocking_b2g&chfieldvalue=FIXED&f11=status_whiteboard&bug_status=VERIFIED&j4=OR&f5=cf_status_b2g_1_2&v8=Gaia&f6=CP&v2=koi%2B%20leo%2B&f7=OP&o8=substring
+https://bugzilla.mozilla.org/buglist.cgi?f10=CP&o5=nowordssubstr&f1=OP&list_id=7950540&f8=component&f0=OP&v11=NO_UPLIFT%20NPOTB%20POVB&o11=nowordssubstr&resolution=FIXED&o2=anywordssubstr&f9=CP&j7=OR&f4=OP&v5=fixed%20verified%20unaffected%20wontfix%20disabled&chfieldto=Now&query_format=advanced&chfield=resolution&j1=OR&f3=CP&chfieldfrom=2013-09-16&f2=cf_blocking_b2g&chfieldvalue=FIXED&f11=status_whiteboard&bug_status=RESOLVED&j4=OR&f5=cf_status_b2g_1_2&v8=Gaia&f6=CP&v2=koi%2B%20leo%2B&f7=OP&o8=substring
+
+# approval-gaia-v1.2+
+https://bugzilla.mozilla.org/buglist.cgi?type0-1-0=nowordssubstr;list_id=5859395;field0-1-0=cf_status_b2g18;field0-0-0=flagtypes.name;resolution=FIXED;query_format=advanced;chfield=resolution;chfieldfrom=2013-02-01;value0-1-0=fixed%20verified%20unaffected%20wontfix%20disabled;chfieldvalue=FIXED;bug_status=VERIFIED;type0-0-0=anywordssubstr;value0-0-0=approval-gaia-v1.2%2B
+https://bugzilla.mozilla.org/buglist.cgi?type0-1-0=nowordssubstr;list_id=5859395;field0-1-0=cf_status_b2g18;field0-0-0=flagtypes.name;resolution=FIXED;query_format=advanced;chfield=resolution;chfieldfrom=2013-02-01;value0-1-0=fixed%20verified%20unaffected%20wontfix%20disabled;chfieldvalue=FIXED;bug_status=RESOLVED;type0-0-0=anywordssubstr;value0-0-0=approval-gaia-v1.2%2B
+
+
 # blocking-b2g18:tef/shira/leo+
 https://bugzilla.mozilla.org/buglist.cgi?o5=nowordssubstr&f10=CP&f1=OP&f0=OP&f8=component&v11=NO_UPLIFT&o11=notsubstring&resolution=FIXED&o2=anywordssubstr&f9=CP&j7=OR&f4=OP&v5=fixed%20verified%20unaffected%20wontfix%20disabled&query_format=advanced&j1=OR&f3=CP&f2=cf_blocking_b2g&f11=status_whiteboard&bug_status=RESOLVED&j4=OR&f5=cf_status_b2g18&v8=Gaia&f6=CP&v2=tef%2B%20shira%2B%20leo%2B&f7=OP&o8=substring&list_id=6307557
 https://bugzilla.mozilla.org/buglist.cgi?o5=nowordssubstr&f10=CP&f1=OP&f0=OP&f8=component&v11=NO_UPLIFT&o11=notsubstring&resolution=FIXED&o2=anywordssubstr&f9=CP&j7=OR&f4=OP&v5=fixed%20verified%20unaffected%20wontfix%20disabled&query_format=advanced&j1=OR&f3=CP&f2=cf_blocking_b2g&f11=status_whiteboard&bug_status=VERIFIED&j4=OR&f5=cf_status_b2g18&v8=Gaia&f6=CP&v2=tef%2B%20shira%2B%20leo%2B&f7=OP&o8=substring&list_id=6307557
