@@ -23,18 +23,19 @@ def flags_to_set(branches):
 
 def fixed_on_branches(bug):
     b = []
-    if bug.get('cf_status_b2g_1_2') == 'fixed':
-        b.append('v1.2')
-    if bug.get('cf_status_b2g18') == 'fixed':
-        b.append('v1-train')
-    if bug.get('cf_status_b2g18_1_0_0') == 'fixed':
-        b.append('v1.0.0')
-    if bug.get('cf_status_b2g18_1_0_1') == 'fixed':
-        b.append('v1.0.1')
-    if bug.get('cf_status_b2g18_1_1_0') == 'fixed':
-        b.append('v1.1.0')
-    if bug.get('cf_status_b2g_1_1_hd') == 'fixed':
-        b.append('v1.1.0hd')
+    for x in ('fixed', 'verified'):
+        if bug.get('cf_status_b2g_1_2') == x:
+            b.append('v1.2')
+        if bug.get('cf_status_b2g18') == x:
+            b.append('v1-train')
+        if bug.get('cf_status_b2g18_1_0_0') == x:
+            b.append('v1.0.0')
+        if bug.get('cf_status_b2g18_1_0_1') == x:
+            b.append('v1.0.1')
+        if bug.get('cf_status_b2g18_1_1_0') == x:
+            b.append('v1.1.0')
+        if bug.get('cf_status_b2g_1_1_hd') == x:
+            b.append('v1.1.0hd')
     return b
 
 
