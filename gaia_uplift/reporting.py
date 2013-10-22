@@ -152,7 +152,8 @@ def classify_gbu(report):
     bad = []
     ugly = []
     for bug_id in [x for x in report.keys() if report[x].has_key('uplift_status')]:
-        n_success = n_failure = 0
+        n_success = 0
+        n_failure = 0
         bug = report[bug_id]
         for commit in bug['uplift_status'].keys():
             n_success += len(bug['uplift_status'][commit]['success'].keys())
@@ -164,7 +165,9 @@ def classify_gbu(report):
         elif n_failure > 0 and n_success == 0:
             bad.append(bug_id)
         else:
-            raise Exception("What the hell is going on here!")
+            raise Exception("What the hell is going on here! bug: " + bug_id +
+                            " succes: " + str(n_success) + " failure: "
+                            + str(n_failure))
     return good, bad, ugly
 
 
@@ -200,13 +203,14 @@ def good_bug_comment(repo_dir, bug_id, bug):
                 comment += "%s: %s\n" % (branch, branch_commit)
     try:
         bzapi.update_bug(bug_id, comment=comment, values=values)
-    except:
+    except Exception, e:
         print "=" * 80
+        print e
         print "Unable to comment on bug %s, please do this:" % bug_id
-        print "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" & bug_id
+        print "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id
         print "Change these flags:"
         for flag in values.keys():
-            print "  * %s -> %s" % flag, values[flag]
+            print "  * %s -> %s" % (flag, values[flag])
         print "\nAnd make this this comment:"
         print comment
 
