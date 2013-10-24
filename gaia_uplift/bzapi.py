@@ -17,14 +17,14 @@ import util
 class FailedBZAPICall(Exception): pass
 class InvalidBZAPICredentials(Exception): pass
 
-api_version = "1.3"
+api_version = "tip"
 api_host = "https://api-dev.bugzilla.mozilla.org/%s/" % api_version
 
 
 def _raw_query(method, url, **kwargs):
     r = requests.request(method, url, **kwargs)
     with open('api-calls.log', "ab+") as f:
-        f.write("Status: %i URL: %s\n" % (r.status_code, url))
+        f.write("Status: %i URL: %s %s\n" % (r.status_code, method, url))
         if kwargs.has_key('data'):
             f.write("DATA\n%s\n" % json.dumps(kwargs['data']))
         if r.status_code == requests.codes.ok:

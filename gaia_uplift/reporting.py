@@ -166,7 +166,7 @@ def classify_gbu(report):
             bad.append(bug_id)
         else:
             raise Exception("What the hell is going on here! bug: " + bug_id +
-                            " succes: " + str(n_success) + " failure: "
+                            " success: " + str(n_success) + " failure: "
                             + str(n_failure))
     return good, bad, ugly
 
