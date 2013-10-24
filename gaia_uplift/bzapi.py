@@ -34,7 +34,7 @@ def _raw_query(method, url, **kwargs):
                 raise FailedBZAPICall(data['message'])
             return data
         else:
-            f.write("ERROR: %s" % r.text)
+            f.write("ERROR: %s\n" % r.text)
             r.raise_for_status()
 
 

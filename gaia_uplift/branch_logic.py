@@ -51,12 +51,13 @@ def needed_on_branches(bug):
 
     if blocking_b2g == 'koi+':
         _a('v1.2')
-    elif blocking_b2g == 'tef+' or blocking_b2g == 'shira+':
-        _a('v1-train')
-        _a('v1.0.1')
     elif blocking_b2g == 'leo+':
         _a('v1.2')
         _a('v1-train')
+    elif blocking_b2g == 'tef+' or blocking_b2g == 'shira+':
+        _a('v1.2')
+        _a('v1-train')
+        _a('v1.0.1')
     else:
         for a in bug['attachments']:
             for f in a.get('flags', []):
