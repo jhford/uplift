@@ -165,9 +165,12 @@ def build_uplift_requirements(repo_dir, queries):
         bug_info = {}
         bugs = dict([(x, bzapi.fetch_bug(x)) for x in find_bugs(queries)])
         for bug_id in [x for x in bugs.keys() if not is_skipable(x)]:
-            b = bug_info[bug_id] = {}
             bug = bugs[bug_id]
-            b['needed_on'] = branch_logic.needed_on_branches(bug)
+            needed_on = branch_logic.needed_on_branches(bug)
+            if len(needed_on) == 0:
+                continue
+            b = bug_info[bug_id] = {}
+            b['needed_on'] = needed_on
             b['already_fixed_on'] = branch_logic.fixed_on_branches(bug)
             b['summary'] = bug['summary']
         write_cache_file(bug_info, requirements_file)
