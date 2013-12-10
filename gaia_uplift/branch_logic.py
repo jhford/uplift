@@ -3,27 +3,31 @@ import bzapi
 
 branches = ['v1.2', 'v1-train', 'v1.1.0hd'] #, 'v1.0.1']
 
-def flags_to_set(branches):
-    f = {}
-    for b in branches:
-        if b == 'v1.2' and b in branches:
-            f['cf_status_b2g_1_2'] = 'fixed'
-        elif b == 'v1-train' and b in branches:
-            f['cf_status_b2g18'] = 'fixed'
-        elif b == 'v1.0.0' and b in branches:
-            f['cf_status_b2g18_1_0_0'] = 'fixed'
-        elif b == 'v1.0.1' and b in branches:
-            f['cf_status_b2g18_1_0_1'] = 'fixed'
-        elif b == 'v1.1.0' and b in branches:
-            f['cf_status_b2g18_1_1_0'] = 'fixed'
-        elif b == 'v1.1.0hd' and b in branches:
-            f['cf_status_b2g_1_1_hd'] = 'fixed'
-    return f
+def flags_to_set(for_branches):
+    fb = []
+    for b in [x for x in for_branches if x in branches]:
+        if b == 'v1.3':
+            fb.append('cf_status_b2g_1_3')
+        elif b == 'v1.2':
+            fb.append('cf_status_b2g_1_2')
+        elif b == 'v1-train':
+            fb.append('cf_status_b2g18')
+        elif b == 'v1.0.0':
+            fb.append('cf_status_b2g18_1_0_0')
+        elif b == 'v1.0.1':
+            fb.append('cf_status_b2g18_1_0_1')
+        elif b == 'v1.1.0':
+            fb.append('cf_status_b2g18_1_1_0')
+        elif b == 'v1.1.0hd':
+            fb.append('cf_status_b2g_1_1_hd')
+    return dict([(x, 'fixed') for x in fb])
 
 
 def fixed_on_branches(bug):
     b = []
     for x in ('fixed', 'verified'):
+        if bug.get('cf_status_b2g_1_3') == x:
+            b.append('v1.3')
         if bug.get('cf_status_b2g_1_2') == x:
             b.append('v1.2')
         if bug.get('cf_status_b2g18') == x:
@@ -49,12 +53,17 @@ def needed_on_branches(bug):
 
     blocking_b2g = bug['cf_blocking_b2g']
 
-    if blocking_b2g == 'koi+':
+    if blocking_b2g == 'v1.3+':
+        _a('v1.3')
+    elif blocking_b2g == 'koi+':
+        _a('v1.3')
         _a('v1.2')
     elif blocking_b2g == 'leo+':
+        _a('v1.3')
         _a('v1.2')
         _a('v1-train')
     elif blocking_b2g == 'tef+' or blocking_b2g == 'shira+':
+        _a('v1.3')
         _a('v1.2')
         _a('v1-train')
         _a('v1.0.1')
@@ -62,9 +71,11 @@ def needed_on_branches(bug):
         for a in bug['attachments']:
             for f in a.get('flags', []):
                 if f['name'] == 'approval-gaia-v1' and f['status'] == '+':
+                    _a('v1.3')
                     _a('v1.2')
                     _a('v1-train')
                 elif f['name'] == 'approval-gaia-v1.2' and f['status'] == '+':
+                    _a('v1.3')
                     _a('v1.2')
     return needed_on
 
