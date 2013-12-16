@@ -1,7 +1,7 @@
 # https://wiki.mozilla.org/Release_Management/B2G_Landing
 import bzapi
 
-branches = ['v1.2', 'v1-train', 'v1.1.0hd'] #, 'v1.0.1']
+branches = ['v1.3', 'v1.2', 'v1-train', 'v1.1.0hd'] #, 'v1.0.1']
 
 status_flags = {
     'v1.3': 'cf_status_b2g_1_3',
@@ -13,7 +13,7 @@ status_flags = {
 }
 
 blocking_rules = {
-    'v1.3+': ['v1.3'],
+    '1.3+': ['v1.3'],
     'koi+': ['v1.3', 'v1.2'],
     'leo+': ['v1.3', 'v1.2', 'v1-train'],
     'tef+': ['v1.3', 'v1.2', 'v1-train', 'v1.0.1'],
@@ -34,12 +34,12 @@ def flags_to_set(for_branches):
 
 
 def fixed_on_branches(bug):
-    branches = dict([(status_flags[k],k) for k in status_flags.keys()])
+    _branches = dict([(status_flags[k],k) for k in status_flags.keys()])
     b = []
     for x in ('fixed', 'verified'):
-        for flag in branches.keys():
-            if bug.get(flag) and not branches[flag] in b:
-                b.append(branches[flag])
+        for flag in _branches.keys():
+            if bug.get(flag) == x and not _branches[flag] in b:
+                b.append(_branches[flag])
     return b
 
 
@@ -52,7 +52,9 @@ def needed_on_branches(bug):
             if not y in needed_on and not y in fixed_on and y in branches:
                 needed_on.append(y)
 
-    _a(blocking_rules[bug['cf_blocking_b2g']])
+    blocking_flag = bug.get('cf_blocking_b2g')
+    if blocking_flag in blocking_rules.keys():
+        _a(blocking_rules[blocking_flag])
 
     for flag in patch_rules.keys():
         for a in bug.get('attachments', []):
