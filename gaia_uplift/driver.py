@@ -19,21 +19,42 @@ import util
 
 gaia_path = os.path.abspath(os.path.join(os.getcwd(), 'gaia'))
 gaia_url = "git@github.com:mozilla-b2g/gaia.git"
-#query_file = os.path.abspath("uplift_queries.dat")
-query_file = os.path.join(os.path.dirname(__file__), "uplift_queries.dat")
+
+def find_arg(args, option):
+    if option in args:
+        option_index = args.index(option)
+        data_index = option_index + 1
+        new_args = args[:]
+        try:
+            data = args[data_index]
+        except:
+            print "ERROR: your option sucks!"
+            raise
+        del new_args[data_index]
+        del new_args[option_index]
+        return (new_args, data) 
+    else:
+        return (args, None)
+    
 
 
 def main():
+    args = sys.argv
+    args, query_file = find_arg(args, '--query-file')
+
+    if not query_file:
+        query_file = os.path.join(os.path.dirname(__file__), "uplift_queries.dat")
+
     print "Using Bugzilla queries in %s" % query_file
     with open(query_file, 'rb') as f:
         queries = [x.strip() for x in f.readlines() if not x.strip().startswith("#") and not x.strip() == ""]
 
-    if len(sys.argv) < 2:
+    if len(args) < 2:
         print "You must specify a command"
         exit(1)
 
-    cmd = sys.argv[1]
-    cmd_args = sys.argv[2:]
+    cmd = args[1]
+    cmd_args = args[2:]
 
     if cmd == 'show':
         bugs = uplift.build_uplift_requirements(gaia_path, queries)
@@ -86,7 +107,6 @@ def main():
         branch = cmd_args[1]
         commits = cmd_args[2:]
         print "->".join(git.sort_commits(gaia_path, commits, branch))
-
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ import json
 branch_rules_name = os.path.join(os.path.dirname(__file__), "branch_rules.json")
 
 with open(branch_rules_name) as f:
-    print "Trying to load %s for branch rules" % branch_rules_name
+    print "Using branch rules in %s" % branch_rules_name
     branch_rules = json.loads(f.read())
 
 branches = branch_rules['branches']
