@@ -40,9 +40,13 @@ def main():
     args, gaia_path = find_arg(args, '--gaia-path', os.path.abspath(os.path.join(os.getcwd(), 'gaia')))
     args, gaia_url = find_arg(args, '--gaia-url', "git@github.com:mozilla-b2g/gaia.git")
 
+    print "Configuration"
+    print "=" * 80
     print "Using Bugzilla queries in %s" % query_file
     print "Gaia URL: %s" % gaia_url
     print "Gaia Local Path: %s" % gaia_path
+    print "=" * 80
+
     with open(query_file, 'rb') as f:
         queries = [x.strip() for x in f.readlines() if not x.strip().startswith("#") and not x.strip() == ""]
 
@@ -93,7 +97,7 @@ def main():
             print "Updated Gaia in %0.2f seconds" % util.time_end(t)
         else:
             print "Creating Gaia"
-            git.create_gaia(repo_dir, gaia_url) # This is sadly broken
+            git.create_gaia(gaia_path, gaia_url) # This is sadly broken
             print "Created Gaia in %0.2f seconds" % util.time_end(t)
     elif cmd == 'merge':
         merge_hd.merge(gaia_path, gaia_url, cmd_args[0], cmd_args[1])
@@ -115,6 +119,9 @@ def main():
         branch = cmd_args[1]
         commits = cmd_args[2:]
         print "->".join(git.sort_commits(gaia_path, commits, branch))
+    else:
+        print "ERROR: You did not specify a command!"
+        exit(1)
 
 
 if __name__ == "__main__":
