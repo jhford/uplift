@@ -17,10 +17,7 @@ import reporting
 import util
 
 
-gaia_path = os.path.abspath(os.path.join(os.getcwd(), 'gaia'))
-gaia_url = "git@github.com:mozilla-b2g/gaia.git"
-
-def find_arg(args, option):
+def find_arg(args, option, default=None):
     if option in args:
         option_index = args.index(option)
         data_index = option_index + 1
@@ -34,18 +31,18 @@ def find_arg(args, option):
         del new_args[option_index]
         return (new_args, data) 
     else:
-        return (args, None)
+        return (args, default)
     
-
 
 def main():
     args = sys.argv
-    args, query_file = find_arg(args, '--query-file')
-
-    if not query_file:
-        query_file = os.path.join(os.path.dirname(__file__), "uplift_queries.dat")
+    args, query_file = find_arg(args, '--query-file', os.path.join(os.path.dirname(__file__), "uplift_queries.dat"))
+    args, gaia_path = find_arg(args, '--gaia-path', os.path.abspath(os.path.join(os.getcwd(), 'gaia')))
+    args, gaia_url = find_arg(args, '--gaia-url', "git@github.com:mozilla-b2g/gaia.git")
 
     print "Using Bugzilla queries in %s" % query_file
+    print "Gaia URL: %s" % gaia_url
+    print "Gaia Local Path: %s" % gaia_path
     with open(query_file, 'rb') as f:
         queries = [x.strip() for x in f.readlines() if not x.strip().startswith("#") and not x.strip() == ""]
 
