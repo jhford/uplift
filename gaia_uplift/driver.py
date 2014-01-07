@@ -84,6 +84,17 @@ def main():
 
         if push_info:
             reporting.comment(gaia_path, uplift_report)
+
+    elif cmd == 'update':
+        t=util.time_start()        
+        if os.path.exists(gaia_path):
+            print "Updating Gaia"
+            git.update_gaia(gaia_path, gaia_url)
+            print "Updated Gaia in %0.2f seconds" % util.time_end(t)
+        else:
+            print "Creating Gaia"
+            git.create_gaia(repo_dir, gaia_url) # This is sadly broken
+            print "Created Gaia in %0.2f seconds" % util.time_end(t)
     elif cmd == 'merge':
         merge_hd.merge(gaia_path, gaia_url, cmd_args[0], cmd_args[1])
     elif cmd == 'comments':
