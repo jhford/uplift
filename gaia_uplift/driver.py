@@ -20,10 +20,11 @@ import util
 gaia_path = os.path.abspath(os.path.join(os.getcwd(), 'gaia'))
 gaia_url = "git@github.com:mozilla-b2g/gaia.git"
 #query_file = os.path.abspath("uplift_queries.dat")
-query_file = os.path.join(os.getcwd(), "uplift_queries.dat")
+query_file = os.path.join(os.path.dirname(__file__), "uplift_queries.dat")
 
 
 def main():
+    print "Using Bugzilla queries in %s" % query_file
     with open(query_file, 'rb') as f:
         queries = [x.strip() for x in f.readlines() if not x.strip().startswith("#") and not x.strip() == ""]
 

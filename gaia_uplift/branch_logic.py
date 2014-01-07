@@ -1,29 +1,21 @@
 # https://wiki.mozilla.org/Release_Management/B2G_Landing
 import bzapi
+import os.path
+import json
 
-branches = ['v1.3', 'v1.2']
+branch_rules_name = os.path.join(os.path.dirname(__file__), "branch_rules.json")
 
-status_flags = {
-    'v1.3': 'cf_status_b2g_1_3',
-    'v1.2': 'cf_status_b2g_1_2',
-    'v1-train': 'cf_status_b2g18',
-    'v1.0.1': 'cf_status_b2g18_1_0_1',
-    'v1.0.0': 'cf_status_b2g18_1_0_0',
-    'v1.1.0hd': 'cf_status_b2g_1_1_hd'
-}
+with open(branch_rules_name) as f:
+    print "Trying to load %s for branch rules" % branch_rules_name
+    branch_rules = json.loads(f.read())
 
-blocking_rules = {
-    '1.3+': ['v1.3'],
-    'koi+': ['v1.3', 'v1.2'],
-    'leo+': ['v1.3', 'v1.2', 'v1-train'],
-    'tef+': ['v1.3', 'v1.2', 'v1-train', 'v1.0.1'],
-    'shira+': ['v1.3', 'v1.2', 'v1-train', 'v1.0.1'],
-}
+branches = branch_rules['branches']
 
-patch_rules = {
-    'approval-gaia-v1': ['v1.3', 'v1.2', 'v1-train'],
-    'approval-gaia-v1.2': ['v1.3', 'v1.2'],
-}
+status_flags = branch_rules['status_flags']
+
+blocking_rules = branch_rules['blocking_rules']
+
+patch_rules = branch_rules['patch_rules']
 
 def flags_to_set(for_branches):
     fb = []

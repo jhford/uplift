@@ -2,7 +2,9 @@ from setuptools import setup, find_packages
 setup(
     name = "gaia_uplift",
     version = "0",
-    packages = find_packages(),
+    packages = ['gaia_uplift'],
+    package_dir = {'gaia_uplift': 'gaia_uplift'},
+    package_data = {'gaia_uplift': ['uplift_queries.dat', 'branch_rules.json']},
     entry_points = {
         'console_scripts': [
             'uplift = gaia_uplift.driver:main'
