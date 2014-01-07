@@ -1,7 +1,7 @@
 # https://wiki.mozilla.org/Release_Management/B2G_Landing
 import bzapi
 
-branches = ['v1.3', 'v1.2', 'v1-train', 'v1.1.0hd'] #, 'v1.0.1']
+branches = ['v1.3', 'v1.2']
 
 status_flags = {
     'v1.3': 'cf_status_b2g_1_3',
