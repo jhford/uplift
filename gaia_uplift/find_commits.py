@@ -8,6 +8,7 @@ import git
 import util
 import bzapi
 import uplift
+import branch_logic
 
 
 # Let's steal the pattern that validates a sha1 as a valid
@@ -70,12 +71,11 @@ def guess_from_attachments(repo_dir, upstream, comments):
     return []
 
 
-def guess_commit(repo_dir, upstream, bug_id):
+def guess_commit(repo_dir, upstream, bug):
     """I take a bug_id and scan the bug comments and attachements to see if I can find
     some valid commits.  I return a list of (commit, reason) doubles, where the commit
     is a string of what I think is the case and the reason is a human readable string
     explaining *why* the commit is likely"""
-    bug_data = bzapi.fetch_complete_bug(bug_id)
     guessed_commits = {}
 
     def merge(y):
@@ -84,10 +84,10 @@ def guess_commit(repo_dir, upstream, bug_id):
                 guessed_commits[k] = []
             guessed_commits[k].extend(y[k])
 
-    if bug_data.has_key('comments'):
-        merge(guess_from_comments(repo_dir, upstream, bug_data['comments']))
-    if bug_data.has_key('attachments'):
-        merge(guess_from_comments(repo_dir, upstream, bug_data['attachments']))
+    if bug.has_key('comments'):
+        merge(guess_from_comments(repo_dir, upstream, bug['comments']))
+    if bug.has_key('attachments'):
+        merge(guess_from_comments(repo_dir, upstream, bug['attachments']))
     return guessed_commits
 
 
@@ -102,14 +102,7 @@ def open_bug_in_browser(bug_id):
 def for_one_bug(repo_dir, bug_id, upstream):
     """ Given a bug id, let's find the commits that we care about.  Right now, make the hoo-man dooo eeeet"""
     commits=[]
-    # It's OK to not have any guesses, but it's seriously annoying when the
-    # guessing logic kills the program!
-    try:
-        guesses = guess_commit(repo_dir, upstream, bug_id)
-    except Exception, e:
-        print >> sys.stderr, "WARNING: Unable to do guessing on %s" % bug_id
-        print >> sys.stderr, e
-        guesses = []
+    guesses = None
 
     def _list_commits():
         if len(commits) > 0:
@@ -133,9 +126,15 @@ def for_one_bug(repo_dir, bug_id, upstream):
     def _open_browser():
         open_bug_in_browser(bug_id)
 
+    bug_data = bzapi.fetch_complete_bug(bug_id)
+    _open_browser()
+
     prompt = "Bug %s %%d commits\nEnter one of a commit, 'guess', 'skip', 'browser', 'list', 'delete', 'delete-all' or 'done': " % bug_id
     print "=" * 80
+    print "Needed on: %s" % util.e_join(branch_logic.needed_on_branches(bug_data))
+    print "Fixed on: %s" % util.e_join(branch_logic.fixed_on_branches(bug_data))
     user_input = raw_input(prompt % len(commits)).strip()
+
 
     # This loop has gotten pretty disgusting.
     while user_input != 'done':
@@ -152,6 +151,13 @@ def for_one_bug(repo_dir, bug_id, upstream):
         elif user_input == "guess" and len(guesses) == 0:
             print "There are no guesses!"
         elif user_input == "guess" and len(guesses) > 0:
+            if not guesses:
+                try:
+                    guesses = guess_commit(repo_dir, upstream, bug)
+                except Exception, e:
+                    print >> sys.stderr, "WARNING: Unable to do guessing on %s" % bug_id
+                    print >> sys.stderr, e
+
             g_prompt = "Enter the number of the commit to use, 'list', 'browser', 'all' for all or 'done' to end: "
             _show_guesses()
             g_input = raw_input(g_prompt).strip()
