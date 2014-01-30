@@ -162,9 +162,10 @@ def is_skipable(bug_id):
 def build_uplift_requirements(repo_dir, queries):
     bug_info = read_cache_file("uplift information", requirements_file)
     if not bug_info:
+        skip_bugs = util.read_json(skip_bugs_file)
         bug_info = {}
-        bugs = dict([(x, bzapi.fetch_bug(x)) for x in find_bugs(queries)])
-        for bug_id in [x for x in bugs.keys() if not is_skipable(x)]:
+        bugs = dict([(x, bzapi.fetch_bug(x)) for x in find_bugs(queries) if not x in skip_bugs])
+        for bug_id in [x for x in sorted(bugs.keys()) if not is_skipable(x)]:
             bug = bugs[bug_id]
             needed_on = branch_logic.needed_on_branches(bug)
             if len(needed_on) == 0:
