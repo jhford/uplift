@@ -215,6 +215,24 @@ def good_bug_comment(repo_dir, bug_id, bug):
         print comment
 
 
+def make_needinfo(bug_data):
+    flags = bug_data.get('flags', [])
+
+    if 'assigned_to' in bug_data.keys() and bug_data['assigned_to']['name'] != 'nobody@mozilla.org':
+        requestee = bug_data['assigned_to']
+    elif 'creator' in bug_data.keys():
+        requestee = bug_data['creator']
+    if requestee:
+        flags.append({
+            'name': 'needinfo',
+            'requestee': requestee,
+            'status': '?',
+            'type_id': '800'
+        })
+
+    return flags
+
+
 def bad_bug_comment(repo_dir, bug_id, bug):
     skip_this_comment = False
     bug_data = bzapi.fetch_complete_bug(bug_id)
@@ -240,19 +258,7 @@ def bad_bug_comment(repo_dir, bug_id, bug):
         return
 
     # If there is an assignee, try to needinfo them!
-    if bug_data.has_key('flags'):
-        flags = bug_data['flags']
-    else:
-        flags = []
-    if 'assigned_to' in bug_data.keys():
-        requestee = bug_data['assigned_to']
-        if requestee:
-            flags.append({
-                'name': 'needinfo',
-                'requestee': requestee,
-                'status': '?',
-                'type_id': '800'
-            })
+    flags = make_needinfo(bug_data)
 
     try:
         bzapi.update_bug(bug_id, comment=comment, values={}, flags=flags)
@@ -279,8 +285,12 @@ def ugly_bug_comment(repo_dir, bug_id, bug):
         for branch in bug['uplift_status'][commit]['failure']:
             bottom_of_comment += "Commit %s didn't uplift to branch %s\n" % (commit, branch)
     comment += bottom_of_comment
+
+    # If there is an assignee, try to needinfo them!
+    flags = make_needinfo(bug_data)
+
     try:
-        bzapi.update_bug(bug_id, comment=comment, values=values)
+        bzapi.update_bug(bug_id, comment=comment, values=values, flags=flags)
     except:
         print "=" * 80
         print "Unable to comment on bug %s, please do this:" % bug_id
