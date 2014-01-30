@@ -218,10 +218,15 @@ def good_bug_comment(repo_dir, bug_id, bug):
 def make_needinfo(bug_data):
     flags = bug_data.get('flags', [])
 
-    if 'assigned_to' in bug_data.keys() and bug_data['assigned_to']['name'] != 'nobody@mozilla.org':
+    user = bzapi.load_credentials()['username']
+
+    flags = [x for x in flags if x['name'] != user]
+
+    if bug_data['assigned_to']['name'] != 'nobody@mozilla.org':
         requestee = bug_data['assigned_to']
-    elif 'creator' in bug_data.keys():
+    else:
         requestee = bug_data['creator']
+
     if requestee:
         flags.append({
             'name': 'needinfo',
