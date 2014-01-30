@@ -17,6 +17,7 @@
     },
     "patch_rules": {
         "approval-gaia-v1": ["v1.3", "v1.2", "v1-train"],
-        "approval-gaia-v1.2": ["v1.3", "v1.2"]
+        "approval-gaia-v1.2": ["v1.3", "v1.2"],
+        "approval-gaia-v1.3": ["v1.3"]
     }
 }
