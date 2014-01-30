@@ -309,13 +309,21 @@ def comment(repo_dir, report):
     bad = [] # No commits
     ugly = [] # Partial uplift
     good, bad, ugly = classify_gbu(report)
+
+    def x(bug_id):
+        del report[bug_id]
+        uplift.write_cache_file(report, uplift.uplift_report_file)
+
     for bug_id in good:
         print "Commenting on good bug %s" % bug_id
         good_bug_comment(repo_dir, bug_id, report[bug_id])
+        x(bug_id)
     for bug_id in bad:
         print "Commenting on bad bug %s" % bug_id
         bad_bug_comment(repo_dir, bug_id, report[bug_id])
+        x(bug_id)
     for bug_id in ugly:
         print "Commenting on ugly bug %s" % bug_id
         ugly_bug_comment(repo_dir, bug_id, report[bug_id])
+        x(bug_id)
 
