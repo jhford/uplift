@@ -94,6 +94,7 @@ class CreateUpdates(BZAPITest):
         bug_data = {'update_token': token}
         updates = subject.create_updates(bug_data)
         self.assertEqual({'token': token}, updates)
+
     def test_updates(self):
         token = 'abc123'
         comment = 'hello'

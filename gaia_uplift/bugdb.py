@@ -41,16 +41,17 @@ def store(bug):
     if not 'bug_db' in globals():
         init()
 
-    bug_db['bugs'][bug['id']] = bug
+    bug_db['bugs'][int(bug['id'])] = bug
     with open(pickle_file, 'w+') as f:
         pickle.dump(bug_db, f)
+        f.flush()
 
 def load(bug_id):
     if not 'bug_db' in globals():
         init()
-    if not bug_db['bugs'].has_key(bug_id):
+    if not bug_db['bugs'].has_key(int(bug_id)):
         return None
-    return bug_db['bugs'][bug_id]
+    return bug_db['bugs'][int(bug_id)]
 
 def last_mod(bug_id):
     if bug_db['bugs'].has_key(bug_id):

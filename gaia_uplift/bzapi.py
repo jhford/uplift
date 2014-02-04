@@ -190,7 +190,7 @@ def search(query):
     The returned dict is keyed by bug number.  The field parameter is either a string or a list.
     If it's a known string (currently basic, all) then a predefined set of bug keys are return.
     If it's a list, then the keys which match items in fields are returned"""
-    print "Running Bugzilla API query"
+    print "Running Bugzilla Search"
     t = util.time_start()
     data = do_query(compute_url(query, 'bug'), retry=True)
     print "API query found %d bugs in %0.2f seconds" % (len(data.get('bugs', [])), util.time_end(t))
@@ -206,14 +206,15 @@ def _fetch_bug(bug_id, all_fields):
         query = {
             'include_fields': 'last_modified_time'
         }
-    return do_query(compute_url(query, 'bug/'+bug_id), retry=True)
+    return do_query(compute_url(query, 'bug/%d' % int(bug_id)), retry=True)
 
 
-
-def fetch_complete_bug(bug_id):
+def fetch_complete_bug(bug_id, cache_ok=False):
     bugdb_copy = bugdb.load(bug_id)
-    
-    if bugdb_copy:
+
+    if bugdb_copy and cache_ok:
+        return bugdb_copy
+    elif bugdb_copy:
         db_last_mod = ['last_change_time']
         bz_last_mod = _fetch_bug(bug_id, False)
         if db_last_mod == bz_last_mod:

@@ -286,7 +286,7 @@ def for_all_bugs(repo_dir, requirements, upstream="master"):
         j+=1
         print "=" * 80
         print "Bug %d of %d" % (j, len(pruned_bugs_to_find))
-        bug = bzapi.fetch_complete_bug(bug_id)
+        bug = bzapi.fetch_complete_bug(bug_id, cache_ok=True)
         requirements[bug_id]['commits'] = for_one_bug(repo_dir, bug_id, bug, upstream)
         uplift.write_cache_file(requirements, uplift.requirements_file)
     return requirements
