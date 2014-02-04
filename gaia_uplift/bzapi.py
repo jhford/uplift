@@ -24,18 +24,27 @@ api_host = "https://api-dev.bugzilla.mozilla.org/%s/" % api_version
 def _raw_query(method, url, **kwargs):
     r = requests.request(method, url, **kwargs)
     with open('api-calls.log', "ab+") as f:
-        f.write("Status: %i URL: %s %s\n" % (r.status_code, method, url))
+        log_line = {
+            'url': url,
+            'method': method,
+            'status_code': r.status_code,
+        }
         if kwargs.has_key('data'):
-            f.write("DATA\n%s\n" % json.dumps(kwargs['data']))
-        if r.status_code == requests.codes.ok:
-            data = r.json()
-            if data.get('error', 0) != 0:
-                f.write("BZAPI ERROR:\n%s\n" % data['error'])
-                raise FailedBZAPICall(data['message'])
-            return data
-        else:
-            f.write("ERROR: %s\n" % r.text)
-            r.raise_for_status()
+            log_line['request_data'] = kwargs['data']
+        try:
+            if r.status_code == requests.codes.ok:
+                data = r.json()
+                if data.get('error', 0) != 0:
+                    log_line['bzapi_error'] = data['message']
+                    raise FailedBZAPICall(data['message'])
+                return data
+            else:
+                log_line['http_error'] = r.text
+                r.raise_for_status()
+        finally:
+            json.dump(log_line, f, indent=2)
+            f.write(',\n')
+            f.flush()
 
 
 def do_query(url, method='get', retry=False, attempts=5, delay=2, **kwargs):
