@@ -53,7 +53,8 @@ def fixed_on_branches(bug):
     for x in ('fixed', 'verified'):
         for flag in _branches.keys():
             if bug.get(flag) == x and not _branches[flag] in b:
-                b.append(_branches[flag])
+                if _branches[flag] in branches:
+                    b.append(_branches[flag])
     return b
 
 

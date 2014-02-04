@@ -52,6 +52,11 @@ class TestFixedOnBranches(unittest.TestCase):
         fixed_on = subject.fixed_on_branches(bug)
         self.assertEqual(['v3'], fixed_on)
 
+    def test_fixed_on_branches_not_enabled(self):
+        bug = u.make_bug({'v4-status': 'fixed'})
+        fixed_on = subject.fixed_on_branches(bug)
+        self.assertNotEqual([], fixed_on)
+
 
 class TestNeededOnBranches(unittest.TestCase):
     def test_needed_on_blocking_already_fixed(self):
@@ -80,7 +85,6 @@ class TestNeededOnBranches(unittest.TestCase):
             'status': '+'
         })]
         bug['attachments'] = [a]
-        print bug
         needed_on = subject.needed_on_branches(bug)
         self.assertEqual(['v2', 'v3'], needed_on)
 
@@ -92,6 +96,5 @@ class TestNeededOnBranches(unittest.TestCase):
             'status': '+'
         })]
         bug['attachments'] = [a]
-        print bug
         needed_on = subject.needed_on_branches(bug)
         self.assertEqual(['v3'], needed_on)
