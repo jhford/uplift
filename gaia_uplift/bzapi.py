@@ -115,8 +115,17 @@ def parse_bugzilla_query(url):
         if query.has_key(p):
             del query[p]
 
-    fquery = flatten_query(query)
-    return [fquery]
+    norm_keys = {}
+    dupe_keys = {}
+    for arg in query.keys():
+        if len(set(query[arg])) > 1:
+            dupe_keys[arg] = set(query[arg])
+        else:
+            norm_keys[arg] = query[arg][0]
+    if len(dupe_keys.keys()) > 0:
+        raise Exception("bad!")
+
+    return [norm_keys]
 
 
 def parse_bzapi_url(url):
