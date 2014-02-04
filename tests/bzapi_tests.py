@@ -87,3 +87,24 @@ class ParseBugzillaQuery(BZAPITest):
             {'a': 'c', 'd': 'f'}
         ]
         self.assertEqual(sorted(expected), sorted(queries))
+
+class CreateUpdates(BZAPITest):
+    def test_no_updates(self):
+        token = 'abc123'
+        bug_data = {'update_token': token}
+        updates = subject.create_updates(bug_data)
+        self.assertEqual({'token': token}, updates)
+    def test_updates(self):
+        token = 'abc123'
+        comment = 'hello'
+        flags  = [{'name': 'awesome', 'status': '+'}]
+        values = {'blocking': 'v1'}
+        bug_data = {'update_token': token}
+        updates = subject.create_updates(bug_data, comment=comment, flags=flags, values=values)
+        expected = {
+            'token': token,
+            'comments': [{'text': comment}],
+            'flags': flags,
+            'blocking': 'v1'
+        }
+        self.assertEqual(expected, updates)
