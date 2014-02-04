@@ -113,12 +113,14 @@ def for_one_bug(repo_dir, bug_id, upstream):
 
 
     def _list_commits():
+        strs = []
+        strs.append("Commits entered:")
         if len(commits) > 0:
-            print "Commits entered:"
             for i in range(0, len(commits)):
-                print "  %d) %s" % (i, commits[i])
+                strs.append("  %d) %s" % (i, commits[i]))
         else:
-            print "No commits entered"
+            strs.append("  none")
+        return "\n".join(strs)
 
     def _show_guesses():
         keys = guesses.keys()
@@ -134,7 +136,7 @@ def for_one_bug(repo_dir, bug_id, upstream):
 
     _open_browser()
 
-    prompt = "Bug %s %%d commits\nEnter command: " % bug_id
+    prompt = "Bug %s %%d commits\n%%s\nEnter command: " % bug_id
     print "=" * 80
     print "Needed on: %s" % util.e_join(branch_logic.needed_on_branches(bug_data))
     print "Fixed on: %s" % util.e_join(branch_logic.fixed_on_branches(bug_data))
@@ -147,22 +149,21 @@ def for_one_bug(repo_dir, bug_id, upstream):
     print "  * browser: (re)open the bug in a browser"
     print "  * delete: enter the delete loop"
 
-    user_input = raw_input(prompt % len(commits)).strip()
+    user_input = raw_input(prompt % (len(commits), _list_commits()))
 
     guess_re = re.compile('^guess-(?P<guess>\d+)$')
+    delete_re = re.compile('^delete-(?P<delete>\d+)$')
     
     # This loop has gotten pretty disgusting.
     while user_input != 'done':
-        if user_input == "list":
-            _list_commits()
-        elif user_input == "skip":
-            print "Adding a bug to the skipped bug list means that you will never"
-            print "see it again.  This is persisted between executions of this program"
-            if util.ask_yn("Add bug to skipped bug list?"):
-                uplift.skip_bug(bug_id)
-            break
-        elif user_input == "delete-all":
-            commits = []
+        if user_input == "browser":
+            _open_browser()
+        elif len(guesses.keys()) > 0 and user_input == "guess-all":
+            for guess in guesses:
+                if git.valid_id(guess):
+                    commits.append(guess)
+                else:
+                    print "Not adding %s because it's invalid" % guess
         elif len(guesses) > 0 and guess_re.match(user_input):
             guess_num = int(guess_re.match(user_input).group('guess'))
             
@@ -174,8 +175,8 @@ def for_one_bug(repo_dir, bug_id, upstream):
                     commits.append(guesses.keys()[guess_num - 1])
                 else:
                     print "Guessed commit isn't valid"
-        elif user_input == "browser":
-            _open_browser()
+        elif user_input == "delete-all":
+            commits = []
         elif user_input == "delete":
             del_prompt = "Enter the number of the commit to delete, 'all' to clear the list or 'done' to end: "
             _list_commits()
@@ -210,9 +211,15 @@ def for_one_bug(repo_dir, bug_id, upstream):
                     _list_commits()
                 except sp.CalledProcessError, e:
                     print "This sha1 commit id (%s) is valid but not found in %s" % (user_input, repo_dir)
+        elif user_input == "skip":
+            print "Adding a bug to the skipped bug list means that you will never"
+            print "see it again.  This is persisted between executions of this program"
+            if util.ask_yn("Add bug to skipped bug list?"):
+                uplift.skip_bug(bug_id)
+            break
         else:
-            print "This is not a sha1 commit id: %s" % user_input
-        user_input = raw_input(prompt % len(commits)).strip()
+            print "This is not valid input: %s" % user_input
+        user_input = raw_input(prompt % (len(commits), _list_commits()))
     return commits
 
 
