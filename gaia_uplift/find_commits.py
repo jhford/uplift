@@ -176,7 +176,7 @@ def for_one_bug(repo_dir, bug_id, upstream):
     print "  * delete-N: delete entered commit"
     print "  * browser: (re)open the bug in a browser"
 
-    user_input = raw_input(prompt % (len(commits), _list_commits()))
+    user_input = raw_input(prompt % (len(commits), _list_commits())).strip()
 
     guess_re = re.compile('^guess-(?P<guess>\d+)$')
     delete_re = re.compile('^delete-(?P<delete>\d+)$')
@@ -225,18 +225,20 @@ def for_one_bug(repo_dir, bug_id, upstream):
             if util.ask_yn("Add bug to skipped bug list?"):
                 uplift.skip_bug(bug_id)
             break
-        elif git.valid_id(user_input):
-            add_commit(user_input)
         else:
             added = False
-            for pattern in commit_regex:
-                match = pattern.search(user_input)
-                if match:
-                    add_commit(match.group('id'))
-                    added = True
+            if git.valid_id(user_input):
+                add_commit(user_input)
+                added = True
+            else:
+                for pattern in commit_regex:
+                    match = pattern.search(user_input)
+                    if match:
+                        add_commit(match.group('id'))
+                        added = True
             if not added:
                 print "This is not valid input: %s" % user_input
-        user_input = raw_input(prompt % (len(commits), _list_commits()))
+        user_input = raw_input(prompt % (len(commits), _list_commits())).strip()
     return commits
 
 
