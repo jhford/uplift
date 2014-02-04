@@ -98,6 +98,35 @@ def open_bug_in_browser(bug_id):
         git.run_cmd(["firefox", "https://bugzilla.mozilla.org/show_bug.cgi?id=%d" % int(bug_id)], workdir='.')
 
 
+
+def add_commit(repo_dir, upstream, commits, commit):
+    if not git.valid_id(commit):
+        print "This sha1 is not a valid commit id: %s" % commit
+        return
+
+    try:
+        on_branch = git.commit_on_branch(repo_dir, commit, upstream)
+    except:
+        on_branch = False
+
+    if not on_branch:
+        print "Commit %s is not on upstream branch '%s'" % (commit, upstream)
+        return
+
+    try:
+        full_rev = git.get_rev(repo_dir, id=commit)
+    except sp.CalledProcessError, e:
+        full_rev = None
+    
+    if not full_rev:
+        print "This sha1 commit id (%s) cannot be resolved in %s" % (commit, repo_dir)
+        return
+
+    if full_rev in commits:
+        print "Already have %s" % full_rev
+    else:
+        commits.append(full_rev)
+
 def for_one_bug(repo_dir, bug_id, bug_data, upstream):
     """ Given a bug id, let's find the commits that we care about.  Right now, make the hoo-man dooo eeeet"""
     commits=[]
@@ -131,33 +160,6 @@ def for_one_bug(repo_dir, bug_id, bug_data, upstream):
     def _open_browser():
         open_bug_in_browser(bug_id)
 
-    def add_commit(commit):
-        if not git.valid_id(commit):
-            print "This sha1 is not a valid commit id: %s" % commit
-            return
-
-        try:
-            on_branch = git.commit_on_branch(repo_dir, commit, upstream)
-        except:
-            on_branch = False
-
-        if not on_branch:
-            print "Commit %s is not on upstream branch '%s'" % (commit, upstream)
-            return
-
-        try:
-            full_rev = git.get_rev(repo_dir, id=commit)
-        except sp.CalledProcessError, e:
-            full_rev = None
-        
-        if not full_rev:
-            print "This sha1 commit id (%s) cannot be resolved in %s" % (commit, repo_dir)
-            return
-
-        if full_rev in commits:
-            print "Already have %s" % full_rev
-        else:
-            commits.append(full_rev)
 
     _open_browser()
 
@@ -202,7 +204,7 @@ def for_one_bug(repo_dir, bug_id, bug_data, upstream):
             else:
                 guessed_commit = guesses.keys()[guess_num - 1]
                 if git.valid_id(guessed_commit):
-                    add_commit(guesses.keys()[guess_num - 1])
+                    add_commit(repo_dir, upstream, commits, guesses.keys()[guess_num - 1])
                 else:
                     print "Guessed commit isn't valid"
         elif len(commits) > 0 and user_input == "delete-all":
@@ -227,13 +229,13 @@ def for_one_bug(repo_dir, bug_id, bug_data, upstream):
         else:
             added = False
             if git.valid_id(user_input):
-                add_commit(user_input)
+                add_commit(repo_dir, upstream, commits, user_input)
                 added = True
             else:
                 for pattern in commit_regex:
                     match = pattern.search(user_input)
                     if match:
-                        add_commit(match.group('id'))
+                        add_commit(repo_dir, upstream, commits, match.group('id'))
                         added = True
             if not added:
                 print "This is not valid input: %s" % user_input
@@ -247,11 +249,8 @@ def for_all_bugs(repo_dir, requirements, upstream="master"):
     bugs_without_commits = []
     for bug_id in requirements:
         if requirements[bug_id].has_key('commits'):
-            pass
-        else:
-            bugs_without_commits.append(bug_id)
-        if len(requirements[bug_id].get('commits', [])) > 0:
-            any_bug_has_commits = True
+            if len(requirements[bug_id]['commits']) > 0:
+                any_bug_has_commits = True
         else:
             bugs_without_commits.append(bug_id)
 
