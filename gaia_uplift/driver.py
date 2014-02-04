@@ -15,7 +15,7 @@ import merge_hd
 import git
 import reporting
 import util
-
+import branch_logic
 
 def find_arg(args, option, default=None):
     if option in args:
@@ -36,16 +36,25 @@ def find_arg(args, option, default=None):
 
 def main():
     args = sys.argv
-    args, query_file = find_arg(args, '--query-file', os.path.join(os.path.dirname(__file__), "uplift_queries.dat"))
-    args, gaia_path = find_arg(args, '--gaia-path', os.path.abspath(os.path.join(os.getcwd(), 'gaia')))
+    default_query_file = os.path.join(os.path.dirname(__file__), "uplift_queries.dat")
+    args, query_file = find_arg(args, '--query-file', default_query_file)
+    default_rules_file = os.path.join(os.path.dirname(__file__), "branch_rules.json")
+    args, rules_file = find_arg(args, '--rules-file', default_rules_file)
+    default_gaia_path = os.path.abspath(os.path.join(os.getcwd(), 'gaia'))
+    args, gaia_path = find_arg(args, '--gaia-path', default_gaia_path)
     args, gaia_url = find_arg(args, '--gaia-url', "git@github.com:mozilla-b2g/gaia.git")
 
     print "Configuration"
     print "=" * 80
     print "Using Bugzilla queries in %s" % query_file
+    print "Using Branch Rules in %s" % rules_file
     print "Gaia URL: %s" % gaia_url
     print "Gaia Local Path: %s" % gaia_path
     print "=" * 80
+
+    # We only do this once per execution.  If someone is so stupid as to reload(branch_logic)
+    # during execution, they'd hork things so bad.  This is a total hack!
+    branch_logic.load_rules(rules_file)
 
     with open(query_file, 'rb') as f:
         queries = [x.strip() for x in f.readlines() if not x.strip().startswith("#") and not x.strip() == ""]

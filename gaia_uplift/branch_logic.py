@@ -3,33 +3,20 @@ import bzapi
 import os.path
 import json
 
-branch_rules_name = os.path.join(os.path.dirname(__file__), "branch_rules.json")
-
-with open(branch_rules_name) as f:
-    print "Using branch rules in %s" % branch_rules_name
-    branch_rules = json.loads(f.read())
-
-# This is a list of branches which we'll operate on.  This makes
-# it possible to keep rules for older branches around but only
-# consider new branches
-branches = branch_rules['branches']
-
-# This is a dictionary which maps branches to status flags
-# e.g. when you land on v1.3, you set status-b2g-v1.3 to 'fixed'
-status_flags = branch_rules['status_flags']
-
-# Some bugs are blocking the release, this tells us which flag
-# is the one that tells us who's blocking
-blocking_flag = branch_rules['blocking_flag']
-
-# Based on which blocking flag we have, we need to know which
-# branches need the patch
-blocking_rules = branch_rules['blocking_rules']
-
-# Some patches are approved to land on a branch but don't block
-# a release.  This is a dictionary of attachment flags to branch
-# mappings.
-patch_rules = branch_rules['patch_rules']
+def load_rules(rules_file):
+    # This function burns my eyes!
+    with open(rules_file) as f:
+        branch_rules = json.loads(f.read())
+    global branches
+    global status_flags
+    global blocking_flag
+    global blocking_rules
+    global patch_rules
+    branches = branch_rules['branches']
+    status_flags = branch_rules['status_flags']
+    blocking_flag = branch_rules['blocking_flag']
+    blocking_rules = branch_rules['blocking_rules']
+    patch_rules = branch_rules['patch_rules']
 
 def flags_to_set(for_branches):
     """Take a list of branches and return a dictionary that contains

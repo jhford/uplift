@@ -1,26 +1,21 @@
 import unittest
+import os
 import gaia_uplift.branch_logic as subject
 import util as u
 
-subject.branches = ['v1', 'v2', 'v3']
-subject.status_flags = {
-    'v1': 'v1-status',
-    'v2': 'v2-status',
-    'v3': 'v3-status'
-}
-subject.blocking_flag = 'blocking'
-subject.blocking_rules = {
-    'v1': ['v1', 'v2', 'v3'],
-    'v2': ['v2', 'v3'],
-    'v3': ['v3']
-}
-subject.patch_rules = {
-    'approval-v1': ['v1', 'v2', 'v3'],
-    'approval-v2': ['v2', 'v3'],
-    'approval-v3': ['v3']
-}
 
-class TestFlagsToSet(unittest.TestCase):
+class BranchLogicTests(unittest.TestCase):
+    def setUp(self):
+        subject.load_rules(
+            os.path.join(os.path.dirname(__file__),
+                         "branch_rules_test.json")
+        )
+
+class LoadRules(BranchLogicTests):
+    def test_load_rules(self):
+        self.assertEqual(subject.blocking_flag, 'blocking')
+
+class TestFlagsToSet(BranchLogicTests):
     def test_no_flags(self):
         flags = subject.flags_to_set([])
         self.assertEqual(flags, {})
@@ -35,7 +30,7 @@ class TestFlagsToSet(unittest.TestCase):
                                  'v2-status': 'fixed'})
 
 
-class TestFixedOnBranches(unittest.TestCase):
+class TestFixedOnBranches(BranchLogicTests):
     def test_fixed_on_no_branches_blocking(self):
         bug = u.make_bug({'blocking': 'v2'})
         fixed_on = subject.fixed_on_branches(bug)
@@ -58,7 +53,7 @@ class TestFixedOnBranches(unittest.TestCase):
         self.assertNotEqual([], fixed_on)
 
 
-class TestNeededOnBranches(unittest.TestCase):
+class TestNeededOnBranches(BranchLogicTests):
     def test_needed_on_blocking_already_fixed(self):
         bug = u.make_bug({'blocking': 'v2',
                           'v2-status': 'fixed',
