@@ -246,6 +246,10 @@ def for_all_bugs(repo_dir, requirements, upstream="master"):
     any_bug_has_commits = False
     bugs_without_commits = []
     for bug_id in requirements:
+        if requirements[bug_id].has_key('commits'):
+            pass
+        else:
+            bugs_without_commits.append(bug_id)
         if len(requirements[bug_id].get('commits', [])) > 0:
             any_bug_has_commits = True
         else:
@@ -268,7 +272,8 @@ def for_all_bugs(repo_dir, requirements, upstream="master"):
         elif user_input == 'delete':
             # Delete the commits that are in the requirements file
             for bug_id in requirements.keys():
-                del requirements[bug_id]['commits']
+                if requirements[bug_id].has_key('commits'):
+                    del requirements[bug_id]['commits']
             uplift.write_cache_file(requirements, uplift.requirements_file)
             bugs_to_find = requirements.keys()
         else:
