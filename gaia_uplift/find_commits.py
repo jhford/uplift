@@ -98,10 +98,9 @@ def open_bug_in_browser(bug_id):
         git.run_cmd(["firefox", "https://bugzilla.mozilla.org/show_bug.cgi?id=%d" % int(bug_id)], workdir='.')
 
 
-def for_one_bug(repo_dir, bug_id, upstream):
+def for_one_bug(repo_dir, bug_id, bug_data, upstream):
     """ Given a bug id, let's find the commits that we care about.  Right now, make the hoo-man dooo eeeet"""
     commits=[]
-    bug_data = bzapi.fetch_complete_bug(bug_id)
     guesses = guess_commit(repo_dir, upstream, bug_data)
     try:
         pass
@@ -283,7 +282,8 @@ def for_all_bugs(repo_dir, requirements, upstream="master"):
         j+=1
         print "=" * 80
         print "Bug %d of %d" % (j, len(pruned_bugs_to_find))
-        requirements[bug_id]['commits'] = for_one_bug(repo_dir, bug_id, upstream)
+        bug = bzapi.fetch_complete_bug(bug_id)
+        requirements[bug_id]['commits'] = for_one_bug(repo_dir, bug_id, bug, upstream)
         uplift.write_cache_file(requirements, uplift.requirements_file)
     return requirements
 
