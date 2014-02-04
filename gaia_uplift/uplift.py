@@ -34,9 +34,11 @@ def write_cache_file(data, path):
 
 def find_bugs(queries):
     bug_data = []
+    all_queries = []
     for q in queries:
-        query = bzapi.parse_bugzilla_query(q)
-        search_data = bzapi.search(query)
+        all_queries.extend(bzapi.parse_bugzilla_query(q))
+    for q in all_queries:
+        search_data = bzapi.search(q)
         for bug in search_data:
             if not bug in bug_data:
                 bug_data.append(bug)

@@ -105,17 +105,18 @@ credentials = load_credentials()
 
 def parse_bugzilla_query(url):
     """Take a URL to bugzilla.mozilla.org and convert the query into a BzAPI
-    query.  The optional dictionary 'override_qs' is a key value mapping of
-    query string parameters that will be overwritten in the output url"""
+    query"""
+    # I hate this function
     url_parts = urlparse.urlparse(url)
     query_string = url_parts.query
     query = urlparse.parse_qs(query_string, keep_blank_values=True)
-    fquery = flatten_query(query)
     # Remove some parameters that aren't useful in the BzAPI context 
     for p in ('list_id', 'known_name', 'columnlist', 'query_based_on', 'query_format', 'ctype'):
-        if fquery.has_key(p):
-            del fquery[p]
-    return fquery
+        if query.has_key(p):
+            del query[p]
+
+    fquery = flatten_query(query)
+    return [fquery]
 
 
 def parse_bzapi_url(url):
