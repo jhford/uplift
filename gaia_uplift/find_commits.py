@@ -19,8 +19,7 @@ id_pattern = git.valid_id_regex
 #   * id: this is a direct commit id, do nothing further
 #   * pr: this is a pull request number, look up the PR
 _commit_regex = [
-    "github.com/mozilla-b2g/gaia/commit/(?P<id>%s)" % id_pattern,
-    "github.com/mozilla-b2g/gaia/pull/(?P<pr>\d*)"
+    "github.com/mozilla-b2g/gaia/commit/(?P<id>%s)" % id_pattern
 ]
 commit_regex = [re.compile(x) for x in _commit_regex]
 
@@ -156,7 +155,10 @@ def for_one_bug(repo_dir, bug_id, upstream):
             print "This sha1 commit id (%s) cannot be resolved in %s" % (user_input, repo_dir)
             return
 
-        commits.append(commit)
+        if full_rev in commits:
+            print "Already have %s" % full_rev
+        else:
+            commits.append(full_rev)
 
     _open_browser()
 
@@ -217,15 +219,19 @@ def for_one_bug(repo_dir, bug_id, upstream):
             else:
                 del commits[delete_num - 1]
 
-        elif git.valid_id(user_input):
-            add_commit(user_input)
         elif user_input == "skip":
             print "Adding a bug to the skipped bug list means that you will never"
             print "see it again.  This is persisted between executions of this program"
             if util.ask_yn("Add bug to skipped bug list?"):
                 uplift.skip_bug(bug_id)
             break
+        elif git.valid_id(user_input):
+            add_commit(user_input)
         else:
+            for pattern in regex_commit:
+                match = regex_commit.match(user_input)
+                if match:
+                    add_commit(match.group('id'))
             print "This is not valid input: %s" % user_input
         user_input = raw_input(prompt % (len(commits), _list_commits()))
     return commits
