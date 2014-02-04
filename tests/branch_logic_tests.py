@@ -50,7 +50,7 @@ class TestFixedOnBranches(BranchLogicTests):
     def test_fixed_on_branches_not_enabled(self):
         bug = u.make_bug({'v4-status': 'fixed'})
         fixed_on = subject.fixed_on_branches(bug)
-        self.assertNotEqual([], fixed_on)
+        self.assertEqual([], fixed_on)
 
 
 class TestNeededOnBranches(BranchLogicTests):
