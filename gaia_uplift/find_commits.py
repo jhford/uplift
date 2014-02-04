@@ -147,12 +147,12 @@ def for_one_bug(repo_dir, bug_id, upstream):
             return
 
         try:
-            full_rev = git.get_rev(repo_dir, id=user_input)
+            full_rev = git.get_rev(repo_dir, id=commit)
         except sp.CalledProcessError, e:
             full_rev = None
         
         if not full_rev:
-            print "This sha1 commit id (%s) cannot be resolved in %s" % (user_input, repo_dir)
+            print "This sha1 commit id (%s) cannot be resolved in %s" % (commit, repo_dir)
             return
 
         if full_rev in commits:
