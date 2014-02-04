@@ -9,9 +9,11 @@ import copy
 import os
 import time
 
+
 import requests
 
 import util
+import bugdb
 
 class FailedBZAPICall(Exception): pass
 class InvalidBZAPICredentials(Exception): pass
@@ -20,7 +22,7 @@ class MultipleQueryParam(Exception): pass
 api_version = "tip"
 api_host = "https://api-dev.bugzilla.mozilla.org/%s/" % api_version
 
-bug_db = {}
+bugdb.init()
 
 def _raw_query(method, url, attempt=1, **kwargs):
     def write_log():
@@ -195,16 +197,30 @@ def search(query):
     return [x['id'] for x in data['bugs']]
 
 
-def fetch_bug(bug_id, include_fields=None):
-    print "USING DEPRECATED FUNCTION!"
-    return fetch_complete_bug(bug_id)
+def _fetch_bug(bug_id, all_fields):
+    if all_fields:
+        query = {
+            'include_fields': "_default,assigned_to,comments,flags"
+        }
+    else:
+        query = {
+            'include_fields': 'last_modified_time'
+        }
+    return do_query(compute_url(query, 'bug/'+bug_id), retry=True)
+
 
 
 def fetch_complete_bug(bug_id):
-    query = {
-        'include_fields': "_default,assigned_to,comments,flags"
-    }
-    return do_query(compute_url(query, 'bug/'+bug_id), retry=True)
+    bugdb_copy = bugdb.load(bug_id)
+    
+    if bugdb_copy:
+        db_last_mod = ['last_change_time']
+        bz_last_mod = _fetch_bug(bug_id, False)
+        if db_last_mod == bz_last_mod:
+            return bugdb_copy
+    bug_data = _fetch_bug(bug_id, True)
+    bugdb.store(bug_data)
+    return bug_data
 
 # This function is split from update_bug to make testing easier
 def create_updates(bug, comment=None, values=None, flags=None):
