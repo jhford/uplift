@@ -13,7 +13,9 @@ setup(
     install_requires = ["isodate",
                         "requests",
                         "PrettyTable"],
-
+    tests_require = ["nose",
+                     "rednose"],
+    test_suite = "nose.collector",
     # metadata for upload to PyPI
     author = "John Ford",
     author_email = "john@johnford.info",
