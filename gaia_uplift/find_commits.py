@@ -114,12 +114,11 @@ def for_one_bug(repo_dir, bug_id, upstream):
 
     def _list_commits():
         strs = []
-        strs.append("Commits entered:")
         if len(commits) > 0:
             for i in range(0, len(commits)):
-                strs.append("  %d) %s" % (i, commits[i]))
+                strs.append("  * %d) %s" % (i, commits[i]))
         else:
-            strs.append("  none")
+            strs.append("  * none")
         return "\n".join(strs)
 
     def _show_guesses():
@@ -134,9 +133,34 @@ def for_one_bug(repo_dir, bug_id, upstream):
     def _open_browser():
         open_bug_in_browser(bug_id)
 
+    def add_commit(commit):
+        if not git.valid_id(commit):
+            print "This sha1 is not a valid commit id: %s" % commit
+            return
+
+        try:
+            on_branch = git.commit_on_branch(repo_dir, commit, upstream)
+        except:
+            on_branch = False
+
+        if not on_branch:
+            print "Commit %s is not on upstream branch '%s'" % (commit, upstream)
+            return
+
+        try:
+            full_rev = git.get_rev(repo_dir, id=user_input)
+        except sp.CalledProcessError, e:
+            full_rev = None
+        
+        if not full_rev:
+            print "This sha1 commit id (%s) cannot be resolved in %s" % (user_input, repo_dir)
+            return
+
+        commits.append(commit)
+
     _open_browser()
 
-    prompt = "Bug %s %%d commits\n%%s\nEnter command: " % bug_id
+    prompt = "%s\nBug %s's %%d commits:\n%%s\nEnter command: " % ('-' * 80, bug_id)
     print "=" * 80
     print "Needed on: %s" % util.e_join(branch_logic.needed_on_branches(bug_data))
     print "Fixed on: %s" % util.e_join(branch_logic.fixed_on_branches(bug_data))
@@ -172,7 +196,7 @@ def for_one_bug(repo_dir, bug_id, upstream):
             else:
                 guessed_commit = guesses.keys()[guess_num - 1]
                 if git.valid_id(guessed_commit):
-                    commits.append(guesses.keys()[guess_num - 1])
+                    add_commit(guesses.keys()[guess_num - 1])
                 else:
                     print "Guessed commit isn't valid"
         elif len(commits) > 0 and user_input == "delete-all":
@@ -189,17 +213,7 @@ def for_one_bug(repo_dir, bug_id, upstream):
                 del commits[delete_num - 1]
 
         elif git.valid_id(user_input):
-            if not git.commit_on_branch(repo_dir, user_input, upstream):
-                print "Commit %s is not on the upstream branch '%s'" % (user_input, upstream)
-                _list_commits()
-            else:
-                try:
-                    full_rev = git.get_rev(repo_dir, id=user_input)
-                    print "appending %s" % full_rev
-                    commits.append(full_rev)
-                    _list_commits()
-                except sp.CalledProcessError, e:
-                    print "This sha1 commit id (%s) is valid but not found in %s" % (user_input, repo_dir)
+            add_commit(user_input)
         elif user_input == "skip":
             print "Adding a bug to the skipped bug list means that you will never"
             print "see it again.  This is persisted between executions of this program"
