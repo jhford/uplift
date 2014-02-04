@@ -16,18 +16,20 @@ import util
 
 class FailedBZAPICall(Exception): pass
 class InvalidBZAPICredentials(Exception): pass
+class MultipleQueryParam(Exception): pass
 
 api_version = "tip"
 api_host = "https://api-dev.bugzilla.mozilla.org/%s/" % api_version
 
 
-def _raw_query(method, url, **kwargs):
+def _raw_query(method, url, attempt=1, **kwargs):
     r = requests.request(method, url, **kwargs)
-    with open('api-calls.log', "ab+") as f:
+    with open('uplift_api_calls.log', "ab+") as f:
         log_line = {
             'url': url,
             'method': method,
             'status_code': r.status_code,
+            'attempt': attempt
         }
         if kwargs.has_key('data'):
             log_line['request_data'] = kwargs['data']
@@ -42,6 +44,8 @@ def _raw_query(method, url, **kwargs):
                 log_line['http_error'] = r.text
                 r.raise_for_status()
         finally:
+            # Scrubadubdub
+            log_line['url'] = log_line['url'].replace(credentials['password'], '<password>')
             json.dump(log_line, f, indent=2)
             f.write(',\n')
             f.flush()
@@ -55,7 +59,7 @@ def do_query(url, method='get', retry=False, attempts=5, delay=2, **kwargs):
 
     for i in range(0, attempts):
         try:
-            json_data = _raw_query(method, url, **kwargs)
+            json_data = _raw_query(method, url, i+1, **kwargs)
             return json_data
         except Exception, e:
             print "Query attempt %i failed: %s" % (i, e)
@@ -69,8 +73,8 @@ def flatten_query(query):
     suggest that this should be handled, but it isn't"""
     fquery = {}
     for k in query.keys():
-        if len(query[k]) != 1:
-            print >> sys.stderr, "%s has more than one value. Overwriting %s with %s" % (k, ", ".join(query[k][:-1]), query[k][-1])
+        if len(set(query[k])) != 1:
+            raise MultipleQueryParam("There are duplicate query parameters.  This is always bad. No, always!")
         fquery[k] = query[k][-1]
     return fquery
 
@@ -78,7 +82,7 @@ def compute_url(query, endpoint):
     """This is where we assemble the query.  We add in the BZ credentials
     here so that they don't end up in other parts of the program"""
     full_query = copy.deepcopy(query)
-    full_query.update(load_credentials())
+    full_query.update(credentials)
     return "%s%s%s?%s" % (api_host, "" if api_host.endswith("/") else "/", endpoint, urllib.urlencode(full_query))
 
 
@@ -96,6 +100,8 @@ def load_credentials(credentials_file="~/.bzapi_credentials"):
         return {'username': data['username'], 'password': data['password']}
     raise InvalidBZAPICredentials("credentials file did not have a username and password")
 
+# XXX: Notice this is in a weird place?  Yah, me too.  This sucks!
+credentials = load_credentials()
 
 def parse_bugzilla_query(url):
     """Take a URL to bugzilla.mozilla.org and convert the query into a BzAPI
