@@ -19,7 +19,7 @@ id_pattern = git.valid_id_regex
 #   * id: this is a direct commit id, do nothing further
 #   * pr: this is a pull request number, look up the PR
 _commit_regex = [
-    "github.com/mozilla-b2g/gaia/commit/(?P<id>%s)" % id_pattern
+    "/commit/(?P<id>%s)" % id_pattern
 ]
 commit_regex = [re.compile(x) for x in _commit_regex]
 
