@@ -115,17 +115,46 @@ def parse_bugzilla_query(url):
         if query.has_key(p):
             del query[p]
 
-    norm_keys = {}
-    dupe_keys = {}
+    norm = {}
+    dupe = {}
+    queries = []
+
+    if len(query.keys()) == 0:
+        return []
+
     for arg in query.keys():
         if len(set(query[arg])) > 1:
-            dupe_keys[arg] = set(query[arg])
+            dupe[arg] = list(set(query[arg]))
         else:
-            norm_keys[arg] = query[arg][0]
-    if len(dupe_keys.keys()) > 0:
-        raise Exception("bad!")
+            norm[arg] = query[arg][0]
 
-    return [norm_keys]
+    if len(dupe.keys()) == 0:
+        return [norm]
+
+    # This algorithm is kind of bad because it visits
+    # each permutation 1 time for each duplicate
+    def make_queries(visited, to_visit):
+        if len(to_visit) == 0:
+            q = {}
+            q.update(norm)
+            q.update(visited)
+            if q not in queries:
+                queries.append(q)
+        else:
+            for key in to_visit.keys():
+                for value in to_visit[key]:
+                    new_visited = {}
+                    new_visited.update(visited)
+                    new_visited.update({key: value})
+                    new_to_visit = {}
+                    new_to_visit.update(to_visit)
+                    del new_to_visit[key]
+                    make_queries(new_visited, new_to_visit)
+
+        
+    make_queries({}, dupe)
+    
+    return queries
 
 
 def parse_bzapi_url(url):

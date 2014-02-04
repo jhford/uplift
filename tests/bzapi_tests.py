@@ -49,3 +49,41 @@ class ComputeUrl(BZAPITest):
         url = subject.compute_url({'a': 'b'}, 'sample')
         self.assertEqual('%ssample?a=b&username=test_user%%40bugzilla.com&password=testpassword' % subject.api_host, url)
 
+
+class ParseBugzillaQuery(BZAPITest):
+    def test_no_params(self):
+        url = 'http://b.m.o/search'
+        queries = subject.parse_bugzilla_query(url)
+        self.assertEqual([], queries)
+    
+    def test_no_duplicates(self):
+        url = 'http://b.m.o/search?a=b&c=d'
+        queries = subject.parse_bugzilla_query(url)
+        self.assertEqual(1, len(queries))
+        self.assertEqual(sorted([{'a': 'b', 'c': 'd'}]), sorted(queries))
+
+    def test_single_duplicate_one_norm(self):
+        url = 'http://b.m.o/search?a=b&a=c&d=e'
+        queries = subject.parse_bugzilla_query(url)
+        self.assertEqual(2, len(queries))
+        self.assertEqual(sorted([{'a': 'b', 'd': 'e'}, {'a': 'c', 'd': 'e'}]),
+                         sorted(queries))
+
+    def test_single_duplicate(self):
+        url = 'http://b.m.o/search?a=b&a=c'
+        queries = subject.parse_bugzilla_query(url)
+        self.assertEqual(2, len(queries))
+        self.assertEqual(sorted([{'a': 'b'}, {'a': 'c'}]),
+                         sorted(queries))
+        
+    def test_two_duplicates(self):
+        url = 'http://b.m.o/search?a=b&a=c&d=e&d=f'
+        queries = subject.parse_bugzilla_query(url)
+        self.assertEqual(4, len(queries))
+        expected = [
+            {'a': 'b', 'd': 'e'},
+            {'a': 'b', 'd': 'f'},
+            {'a': 'c', 'd': 'e'},
+            {'a': 'c', 'd': 'f'}
+        ]
+        self.assertEqual(sorted(expected), sorted(queries))
