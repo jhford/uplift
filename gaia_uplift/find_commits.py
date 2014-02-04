@@ -146,8 +146,8 @@ def for_one_bug(repo_dir, bug_id, upstream):
     print "  * sha1 commit: add a raw commit number"
     print "  * skip: add a bug to the list of permanently skipped bugs"
     print "  * delete-all: remove all commits from this bug"
+    print "  * delete-N: delete entered commit"
     print "  * browser: (re)open the bug in a browser"
-    print "  * delete: enter the delete loop"
 
     user_input = raw_input(prompt % (len(commits), _list_commits()))
 
@@ -175,30 +175,19 @@ def for_one_bug(repo_dir, bug_id, upstream):
                     commits.append(guesses.keys()[guess_num - 1])
                 else:
                     print "Guessed commit isn't valid"
-        elif user_input == "delete-all":
+        elif len(commits) > 0 and user_input == "delete-all":
             commits = []
-        elif user_input == "delete":
-            del_prompt = "Enter the number of the commit to delete, 'all' to clear the list or 'done' to end: "
-            _list_commits()
-            del_input = raw_input(del_prompt).strip()
-            while del_input != 'done':
-                if del_input == 'all':
-                    commits = []
-                    break
-                else:
-                    try:
-                        n = int(del_input, 10)
-                        valid_input = True
-                    except ValueError:
-                        print "Invalid input: %s" % del_input
-                        valid_input = False
-                    if valid_input:
-                        if n >= 0 and n < len(commits):
-                            del commits[n]
-                        else:
-                            print "You entered an index that's out of the range 0-%d" % len(commits)
-                _list_commits()
-                del_input = raw_input(del_prompt).strip()
+        elif len(commits) > 0 and delete_re.match(user_input):
+            try:
+                delete_num = int(delete_re.match(user_input).group('delete'))
+            except ValueError:
+                delete_num = None
+                
+            if delete_num is None or delete_num < 1 or delete_num > len(commits):
+                print "You are trying to delete an invalid commit number" 
+            else:
+                del commits[delete_num - 1]
+
         elif git.valid_id(user_input):
             if not git.commit_on_branch(repo_dir, user_input, upstream):
                 print "Commit %s is not on the upstream branch '%s'" % (user_input, upstream)
