@@ -182,8 +182,8 @@ def for_one_bug(repo_dir, bug_id, upstream):
     delete_re = re.compile('^delete-(?P<delete>\d+)$')
     
     while user_input != 'done':
-        guess_match = guess_re.match(user_input)
-        delete_match = delete_re.match(user_input)
+        guess_match = guess_re.search(user_input)
+        delete_match = delete_re.search(user_input)
         if user_input == "browser":
             _open_browser()
         elif len(guesses.keys()) > 0 and user_input == "guess-all":
@@ -228,11 +228,14 @@ def for_one_bug(repo_dir, bug_id, upstream):
         elif git.valid_id(user_input):
             add_commit(user_input)
         else:
-            for pattern in regex_commit:
-                match = regex_commit.match(user_input)
+            added = False
+            for pattern in commit_regex:
+                match = pattern.search(user_input)
                 if match:
                     add_commit(match.group('id'))
-            print "This is not valid input: %s" % user_input
+                    added = True
+            if not added:
+                print "This is not valid input: %s" % user_input
         user_input = raw_input(prompt % (len(commits), _list_commits()))
     return commits
 
