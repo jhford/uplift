@@ -26,7 +26,7 @@ commit_regex = [re.compile(x) for x in _commit_regex]
 
 
 def guess_from_pr(repo_dir, upstream, pr_num):
-    # Useful: https://api.github.com/repos/mozilla-b2g/gaia/pulls/7742, look for a merge_commit_sha key
+    # Useful: https://api.github.com/repos/mozilla-b2g/gaia/pulls/7742
     #print "You should checkout Pull Request: %d" % pr_num
     return None
 
@@ -102,7 +102,15 @@ def open_bug_in_browser(bug_id):
 def for_one_bug(repo_dir, bug_id, upstream):
     """ Given a bug id, let's find the commits that we care about.  Right now, make the hoo-man dooo eeeet"""
     commits=[]
-    guesses = None
+    bug_data = bzapi.fetch_complete_bug(bug_id)
+    guesses = guess_commit(repo_dir, upstream, bug_data)
+    try:
+        pass
+    except Exception, e:
+        # We *really* don't want to kill the program because of guessing.
+        print "Guessing failed"
+        guesses = {}
+
 
     def _list_commits():
         if len(commits) > 0:
@@ -114,10 +122,8 @@ def for_one_bug(repo_dir, bug_id, upstream):
 
     def _show_guesses():
         keys = guesses.keys()
-        print "Guesses for bug %s" % bug_id
-        print "-=-=" * 20
         for i in range(0, len(keys)):
-            print "  %d) %s" % (i, keys[i])
+            print "  * guess-%d: %s" % (i+1, keys[i])
             print "    BECAUSE:"
             for reason in guesses[keys[i]]:
                 for line in reason.split('\n'):
@@ -126,16 +132,25 @@ def for_one_bug(repo_dir, bug_id, upstream):
     def _open_browser():
         open_bug_in_browser(bug_id)
 
-    bug_data = bzapi.fetch_complete_bug(bug_id)
     _open_browser()
 
-    prompt = "Bug %s %%d commits\nEnter one of a commit, 'guess', 'skip', 'browser', 'list', 'delete', 'delete-all' or 'done': " % bug_id
+    prompt = "Bug %s %%d commits\nEnter command: " % bug_id
     print "=" * 80
     print "Needed on: %s" % util.e_join(branch_logic.needed_on_branches(bug_data))
     print "Fixed on: %s" % util.e_join(branch_logic.fixed_on_branches(bug_data))
+    print "Type one of"
+    if len(guesses) > 0:
+        _show_guesses()
+    print "  * sha1 commit: add a raw commit number"
+    print "  * skip: add a bug to the list of permanently skipped bugs"
+    print "  * delete-all: remove all commits from this bug"
+    print "  * browser: (re)open the bug in a browser"
+    print "  * delete: enter the delete loop"
+
     user_input = raw_input(prompt % len(commits)).strip()
 
-
+    guess_re = re.compile('^guess-(?P<guess>\d+)$')
+    
     # This loop has gotten pretty disgusting.
     while user_input != 'done':
         if user_input == "list":
@@ -148,42 +163,17 @@ def for_one_bug(repo_dir, bug_id, upstream):
             break
         elif user_input == "delete-all":
             commits = []
-        elif user_input == "guess" and len(guesses) == 0:
-            print "There are no guesses!"
-        elif user_input == "guess" and len(guesses) > 0:
-            if not guesses:
-                try:
-                    guesses = guess_commit(repo_dir, upstream, bug)
-                except Exception, e:
-                    print >> sys.stderr, "WARNING: Unable to do guessing on %s" % bug_id
-                    print >> sys.stderr, e
-
-            g_prompt = "Enter the number of the commit to use, 'list', 'browser', 'all' for all or 'done' to end: "
-            _show_guesses()
-            g_input = raw_input(g_prompt).strip()
-            while g_input != 'done':
-                if g_input == 'all':
-                    commits.extend(guesses.keys())
-                elif g_input == 'list':
-                    _list_commits()
-                elif g_input == 'browser':
-                    _open_browser()
+        elif len(guesses) > 0 and guess_re.match(user_input):
+            guess_num = int(guess_re.match(user_input).group('guess'))
+            
+            if guess_num < 1 or guess_num > len(guesses.keys()):
+                print "You are trying to use a guess that's invalid"
+            else:
+                guessed_commit = guesses.keys()[guess_num - 1]
+                if git.valid_id(guessed_commit):
+                    commits.append(guesses.keys()[guess_num - 1])
                 else:
-                    try:
-                        n = int(g_input, 10)
-                        valid_input = True
-                    except ValueError:
-                        print "Invalid input: %s" % g_input
-                        valid_input = False
-                    if valid_input:
-                        if n >= 0 and n < len(guesses.keys()):
-                            # This is about as racey as Debbie does Dallas
-                            commits.append(guesses.keys()[n])
-                        else:
-                            print "You entered an index that's out of the range 0-%d" % len(guesses.keys())
-                if not g_input == 'list':
-                    _show_guesses()
-                g_input = raw_input(g_prompt).strip()
+                    print "Guessed commit isn't valid"
         elif user_input == "browser":
             _open_browser()
         elif user_input == "delete":
