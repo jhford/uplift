@@ -166,6 +166,7 @@ def for_one_bug(repo_dir, bug_id, upstream):
     print "Fixed on: %s" % util.e_join(branch_logic.fixed_on_branches(bug_data))
     print "Type one of"
     if len(guesses) > 0:
+        print "  * guess-all: add all guesses listed below"
         _show_guesses()
     print "  * sha1 commit: add a raw commit number"
     print "  * skip: add a bug to the list of permanently skipped bugs"
@@ -178,8 +179,9 @@ def for_one_bug(repo_dir, bug_id, upstream):
     guess_re = re.compile('^guess-(?P<guess>\d+)$')
     delete_re = re.compile('^delete-(?P<delete>\d+)$')
     
-    # This loop has gotten pretty disgusting.
     while user_input != 'done':
+        guess_match = guess_re.match(user_input)
+        delete_match = delete_re.match(user_input)
         if user_input == "browser":
             _open_browser()
         elif len(guesses.keys()) > 0 and user_input == "guess-all":
@@ -188,10 +190,13 @@ def for_one_bug(repo_dir, bug_id, upstream):
                     commits.append(guess)
                 else:
                     print "Not adding %s because it's invalid" % guess
-        elif len(guesses) > 0 and guess_re.match(user_input):
-            guess_num = int(guess_re.match(user_input).group('guess'))
+        elif len(guesses) > 0 and guess_match:
+            try:
+                guess_num = int(guess_match.group('guess'))
+            except ValueError:
+                guess_num = None
             
-            if guess_num < 1 or guess_num > len(guesses.keys()):
+            if guess_num is None or guess_num < 1 or guess_num > len(guesses.keys()):
                 print "You are trying to use a guess that's invalid"
             else:
                 guessed_commit = guesses.keys()[guess_num - 1]
@@ -201,9 +206,9 @@ def for_one_bug(repo_dir, bug_id, upstream):
                     print "Guessed commit isn't valid"
         elif len(commits) > 0 and user_input == "delete-all":
             commits = []
-        elif len(commits) > 0 and delete_re.match(user_input):
+        elif len(commits) > 0 and delete_match:
             try:
-                delete_num = int(delete_re.match(user_input).group('delete'))
+                delete_num = int(delete_match.group('delete'))
             except ValueError:
                 delete_num = None
                 
