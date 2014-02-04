@@ -13,7 +13,6 @@ import requests
 
 import util
 
-
 class FailedBZAPICall(Exception): pass
 class InvalidBZAPICredentials(Exception): pass
 class MultipleQueryParam(Exception): pass
@@ -21,34 +20,57 @@ class MultipleQueryParam(Exception): pass
 api_version = "tip"
 api_host = "https://api-dev.bugzilla.mozilla.org/%s/" % api_version
 
+bug_db = {}
 
 def _raw_query(method, url, attempt=1, **kwargs):
-    r = requests.request(method, url, **kwargs)
-    with open('uplift_api_calls.log', "ab+") as f:
-        log_line = {
-            'url': url,
-            'method': method,
-            'status_code': r.status_code,
-            'attempt': attempt
-        }
-        if kwargs.has_key('data'):
-            log_line['request_data'] = kwargs['data']
-        try:
-            if r.status_code == requests.codes.ok:
-                data = r.json()
-                if data.get('error', 0) != 0:
-                    log_line['bzapi_error'] = data['message']
-                    raise FailedBZAPICall(data['message'])
-                return data
-            else:
-                log_line['http_error'] = r.text
-                r.raise_for_status()
-        finally:
+    def write_log():
+        with open('uplift_api_calls.log', 'ab+') as f:
             # Scrubadubdub
             log_line['url'] = log_line['url'].replace(credentials['password'], '<password>')
             json.dump(log_line, f, indent=2)
             f.write(',\n')
             f.flush()
+
+    log_line = {
+        'url': url,
+        'method': method,
+        'attempt': attempt
+    }
+
+    if kwargs.has_key('data'):
+        log_line['request_data'] = kwargs['data']
+
+    t = util.time_start()
+    try:
+        r = requests.request(method, url, **kwargs)
+    except requests.exceptions.RequestException as e:
+        write_log()
+        raise FailedBZAPICall(super_exception=e)
+    log_line['request_time'] = util.time_end(t)
+    log_line['http_status'] = r.status_code
+
+    if r.status_code == requests.codes.ok:
+        try:
+            data = r.json()
+        except ValueError as e:
+            log_line['bzapi_error'] = 'response was not json'
+            write_log()
+            raise FailedBZAPICall(super_exception=e)
+
+        if data.get('error', 0) != 0:
+            log_line['bzapi_error'] = data['message']
+            write_log()
+            raise FailedBZAPICall(data['message'])
+
+        write_log()
+        return data
+    else:
+        log_line['http_error'] = r.text
+        write_log()
+        try:
+            r.raise_for_status()
+        except urllib2.HTTPError as e:
+            raise FailedBZAPICall(super_exception=e)
 
 
 def do_query(url, method='get', retry=False, attempts=5, delay=2, **kwargs):
@@ -174,17 +196,15 @@ def search(query):
 
 
 def fetch_bug(bug_id, include_fields=None):
-    query = {}
-    if include_fields:
-        query['include_fields'] = include_fields
-    t = util.time_start()
-    bug_data = do_query(compute_url(query, 'bug/%s' % bug_id), retry=True)
-    print "Fetched bug %s in %0.2f seconds" % (bug_id, util.time_end(t))
-    return bug_data
+    print "USING DEPRECATED FUNCTION!"
+    return fetch_complete_bug(bug_id)
 
 
 def fetch_complete_bug(bug_id):
-    return fetch_bug(bug_id, "_default,assigned_to,comments,flags")
+    query = {
+        'include_fields': "_default,assigned_to,comments,flags"
+    }
+    return do_query(compute_url(query, 'bug/'+bug_id), retry=True)
 
 # This function is split from update_bug to make testing easier
 def create_updates(bug, comment=None, values=None, flags=None):
