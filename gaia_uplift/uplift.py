@@ -22,14 +22,10 @@ requirements_file = os.path.abspath("requirements.json")
 uplift_report_file = os.path.abspath("uplift_report.json")
 skip_bugs_file = os.path.abspath("skip_bugs.json")
 
-def read_cache_file(name, path):
+def read_requirements(name, path):
     if os.path.exists(path) and util.ask_yn("Found %s cached data (%s).\nLoad this file?" % (name, path)):
         return util.read_json(path)
     return None
-
-
-def write_cache_file(data, path):
-    util.write_json(path, data)
 
 
 def find_bugs(queries):
@@ -162,7 +158,7 @@ def is_skipable(bug_id):
     return False
 
 def build_uplift_requirements(repo_dir, queries):
-    bug_info = read_cache_file("uplift information", requirements_file)
+    bug_info = read_requirements("uplift information", requirements_file)
     if not bug_info:
         skip_bugs = util.read_json(skip_bugs_file)
         bug_info = {}

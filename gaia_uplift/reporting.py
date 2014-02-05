@@ -324,7 +324,7 @@ def comment(repo_dir, report):
 
     def x(bug_id):
         del report[bug_id]
-        uplift.write_cache_file(report, uplift.uplift_report_file)
+        util.write_json(uplift.uplift_report_file, report)
 
     for bug_id in good:
         print "Commenting on good bug %s" % bug_id

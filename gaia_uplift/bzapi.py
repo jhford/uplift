@@ -22,8 +22,6 @@ class MultipleQueryParam(Exception): pass
 api_version = "tip"
 api_host = "https://api-dev.bugzilla.mozilla.org/%s/" % api_version
 
-bugdb.init()
-
 def _raw_query(method, url, attempt=1, **kwargs):
     def write_log():
         with open('uplift_api_calls.log', 'ab+') as f:

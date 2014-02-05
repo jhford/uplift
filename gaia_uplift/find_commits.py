@@ -273,7 +273,7 @@ def for_all_bugs(repo_dir, requirements, upstream="master"):
             for bug_id in requirements.keys():
                 if requirements[bug_id].has_key('commits'):
                     del requirements[bug_id]['commits']
-            uplift.write_cache_file(requirements, uplift.requirements_file)
+            util.write_json(uplift.requirements_file, requirements)
             bugs_to_find = requirements.keys()
         else:
             raise Exception("Huh?")
@@ -288,7 +288,7 @@ def for_all_bugs(repo_dir, requirements, upstream="master"):
         print "Bug %d of %d" % (j, len(pruned_bugs_to_find))
         bug = bzapi.fetch_complete_bug(bug_id, cache_ok=True)
         requirements[bug_id]['commits'] = for_one_bug(repo_dir, bug_id, bug, upstream)
-        uplift.write_cache_file(requirements, uplift.requirements_file)
+        util.write_json(uplift.requirements_file, requirements)
     return requirements
 
 
