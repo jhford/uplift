@@ -28,7 +28,7 @@ def init():
             try:
                 _bug_db = pickle.load(f)
             except:
-                bug_db = db_create()
+                _bug_db = db_create()
             if too_old(_bug_db):
                 os.unlink(pickle_file)
                 bug_db = db_create()
@@ -54,6 +54,8 @@ def load(bug_id):
     return bug_db['bugs'][int(bug_id)]
 
 def last_mod(bug_id):
+    if not 'bug_db' in globals():
+        return None
     if bug_db['bugs'].has_key(bug_id):
         return bug_db['bugs'][bug_id]['last_change_time']
     else:
