@@ -225,6 +225,10 @@ def fetch_complete_bug(bug_id, cache_ok=False):
 
 # This function is split from update_bug to make testing easier
 def create_updates(bug, comment=None, values=None, flags=None):
+    # I've footgunned with this before.  The fallout is having
+    # to manually copy, paste and set flags in bugzilla.
+    # Ugly, but better than the alternative
+    assert issubclass(type(bug), dict)
     updates = {
         'token': bug['update_token'],
     }
@@ -239,7 +243,7 @@ def create_updates(bug, comment=None, values=None, flags=None):
 
 def update_bug(bug_id, comment=None, values=None, flags=None):
     bug_data = fetch_complete_bug(bug_id)
-    updates = create_updates(comment, values, flags)
+    updates = create_updates(bug_data, comment, values, flags)
     url = compute_url({}, "bug/%s" % bug_id)
     result = do_query(url, "put", data=json.dumps(updates))
 

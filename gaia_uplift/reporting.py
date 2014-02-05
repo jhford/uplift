@@ -1,4 +1,5 @@
 import json
+import traceback
 import prettytable as pt
 
 import branch_logic
@@ -204,8 +205,9 @@ def good_bug_comment(repo_dir, bug_id, bug):
     try:
         bzapi.update_bug(bug_id, comment=comment, values=values)
     except Exception, e:
-        print "=" * 80
         print e
+        traceback.print_exc()
+        print "=" * 80
         print "Unable to comment on bug %s, please do this:" % bug_id
         print "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id
         print "Change these flags:"
@@ -256,6 +258,7 @@ def bad_bug_comment(repo_dir, bug_id, bug):
         comment.append(merge_script(repo_dir, commit, bug['uplift_status'][commit]['failure']))
     comment = "\n".join(comment) #ugh
     if skip_this_comment:
+        print "=" * 80
         print "Skipping this comment because there was already a merge resolution script"
         print ""
         print comment
@@ -267,7 +270,9 @@ def bad_bug_comment(repo_dir, bug_id, bug):
 
     try:
         bzapi.update_bug(bug_id, comment=comment, values={}, flags=flags)
-    except:
+    except Exception, e:
+        print e
+        traceback.print_exc()
         print "=" * 80
         print "Unable to comment on bug %s, please do this:" % bug_id
         print "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id
@@ -296,7 +301,9 @@ def ugly_bug_comment(repo_dir, bug_id, bug):
 
     try:
         bzapi.update_bug(bug_id, comment=comment, values=values, flags=flags)
-    except:
+    except Exception, e:
+        print e
+        traceback.print_exc()
         print "=" * 80
         print "Unable to comment on bug %s, please do this:" % bug_id
         print "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" & bug_id

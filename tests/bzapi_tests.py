@@ -89,6 +89,10 @@ class ParseBugzillaQuery(BZAPITest):
         self.assertEqual(sorted(expected), sorted(queries))
 
 class CreateUpdates(BZAPITest):
+    def test_invalid_call(self):
+        with self.assertRaises(AssertionError):
+            subject.create_updates('i am a string')
+
     def test_no_updates(self):
         token = 'abc123'
         bug_data = {'update_token': token}
