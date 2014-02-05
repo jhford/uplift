@@ -33,11 +33,16 @@ def find_bugs(queries):
     all_queries = []
     for q in queries:
         all_queries.extend(bzapi.parse_bugzilla_query(q))
+    print "Running Bugzilla searches"
     for q in all_queries:
+        sys.stdout.write('.')
+        sys.stdout.flush()
         search_data = bzapi.search(q)
         for bug in search_data:
             if not bug in bug_data:
                 bug_data.append(bug)
+    sys.stdout.write('\nFinished running searches\n')
+    sys.stdout.flush()
     return bug_data
 
 
@@ -95,7 +100,7 @@ def uplift(repo_dir, gaia_url, requirements, start_fresh=True):
         if all_bugs[bug_id].has_key('commits'):
             with_commits[bug_id] = all_bugs[bug_id]
 
-    write_cache_file(with_commits, requirements_file)
+    util.write_json(requirements_file, report)
     ordered_commits = order_commits(repo_dir, with_commits)
 
     uplift = dict([(x, {}) for x in ordered_commits])
@@ -134,7 +139,7 @@ def uplift(repo_dir, gaia_url, requirements, start_fresh=True):
                 del successful_branches[i]
         uplift_report[bug_id]['flags_to_set'] = branch_logic.flags_to_set(successful_branches)
 
-    write_cache_file(uplift_report, uplift_report_file)
+    util.write_json(uplift_report_file, uplift_report)
     return uplift_report
 
 
@@ -172,7 +177,7 @@ def build_uplift_requirements(repo_dir, queries):
             b['needed_on'] = needed_on
             b['already_fixed_on'] = branch_logic.fixed_on_branches(bug)
             b['summary'] = bug['summary']
-        write_cache_file(bug_info, requirements_file)
+        util.write_json(requirements_file, report)
     return bug_info
 
 

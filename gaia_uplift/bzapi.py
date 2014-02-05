@@ -188,10 +188,7 @@ def search(query):
     The returned dict is keyed by bug number.  The field parameter is either a string or a list.
     If it's a known string (currently basic, all) then a predefined set of bug keys are return.
     If it's a list, then the keys which match items in fields are returned"""
-    print "Running Bugzilla Search"
-    t = util.time_start()
     data = do_query(compute_url(query, 'bug'), retry=True)
-    print "API query found %d bugs in %0.2f seconds" % (len(data.get('bugs', [])), util.time_end(t))
     return [x['id'] for x in data['bugs']]
 
 
