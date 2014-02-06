@@ -6,6 +6,7 @@ import shutil
 import isodate
 import re
 import json
+import traceback
 
 import branch_logic
 
@@ -52,6 +53,8 @@ def git_op(command, workdir=os.getcwd(), **kwargs):
     try:
         return run_cmd([git_bin] + command, workdir, **kwargs)
     except sp.CalledProcessError, e:
+        print e
+        traceback.print_exc()
         raise GitError({'command': command,
                         'workdir': workdir,
                         'options': kwargs,
