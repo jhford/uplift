@@ -43,7 +43,7 @@ def find_bugs(queries):
                 bug_data.append(bug)
     sys.stdout.write('\nFinished running searches\n')
     sys.stdout.flush()
-    return bug_data
+    return [x for x in bug_data if not is_skipable(x)]
 
 
 def order_commits(repo_dir, requirements):
@@ -177,7 +177,7 @@ def build_uplift_requirements(repo_dir, queries):
             b['needed_on'] = needed_on
             b['already_fixed_on'] = branch_logic.fixed_on_branches(bug)
             b['summary'] = bug['summary']
-        util.write_json(requirements_file, report)
+        util.write_json(requirements_file, bug_info)
     return bug_info
 
 

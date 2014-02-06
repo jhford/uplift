@@ -12,7 +12,7 @@ import branch_logic
 class PushFailure(Exception):
     pass
 
-
+git_bin = 'git'
 valid_id_regex = "[a-fA-F0-9]{7,40}"
 
 def run_cmd(command, workdir, inc_err=False, read_out=True, env=None, delete_env=None, **kwargs):
@@ -46,7 +46,7 @@ def run_cmd(command, workdir, inc_err=False, read_out=True, env=None, delete_env
 def git_op(command, workdir=os.getcwd(), inc_err=False, **kwargs):
     """ This function is a simple wrapper that might be used to make
     setting the path to git less obnoxious"""
-    return run_cmd(['git'] + command, workdir, inc_err, **kwargs)
+    return run_cmd([git_bin] + command, workdir, inc_err, **kwargs)
 
 
 def get_rev(repo_dir, id='HEAD'):
