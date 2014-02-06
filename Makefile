@@ -1,4 +1,5 @@
 test:
+	chmod +x tests/test_bin/*.sh
 	nosetests --rednose
 
 clean:

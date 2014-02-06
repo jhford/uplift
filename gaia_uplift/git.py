@@ -9,17 +9,17 @@ import json
 
 import branch_logic
 
-class PushFailure(Exception):
-    pass
+class GitError(Exception): pass
+
+class PushFailure(Exception): pass
 
 git_bin = 'git'
 valid_id_regex = "[a-fA-F0-9]{7,40}"
 
-def run_cmd(command, workdir, inc_err=False, read_out=True, env=None, delete_env=None, **kwargs):
+def run_cmd(command, workdir, read_out=True, env=None, delete_env=None, **kwargs):
     """ Wrap subprocess in a way that I like.
     command: string or list of the command to run
     workdir: directory to do the work in
-    inc_err: include stderr in the output string returned
     read_out: decide whether we're going to want output returned or printed
     env: add this dictionary to the default environment
     delete_env: delete these environment keys"""
@@ -30,23 +30,32 @@ def run_cmd(command, workdir, inc_err=False, read_out=True, env=None, delete_env
         for d in delete_env:
             if full_env.has_key(d):
                 del full_env[d]
-    if inc_err:
-        kwargs = kwargs.copy()
-        kwargs['stdout'] = sp.STDOUT
     if read_out:
         func = sp.check_output
     else:
         func = sp.check_call
 
-    # This is probably fairly slow since we open, write and close a file for every command line run
     with open("cmds.log", "ab+") as cmd_log:
-        print >> cmd_log, "command: %s, workdir=%s, env=%s" % (command, workdir, env)
+        log_line = {
+            'command': command,
+            'cwd': os.getcwd(),
+            'workdir': workdir,
+            'env': env
+        }
+        json.dump(log_line, cmd_log, indent=2)
+        cmd_log.write(',\n')
     return func(command, cwd=workdir, env=full_env, **kwargs)
 
-def git_op(command, workdir=os.getcwd(), inc_err=False, **kwargs):
+def git_op(command, workdir=os.getcwd(), **kwargs):
     """ This function is a simple wrapper that might be used to make
     setting the path to git less obnoxious"""
-    return run_cmd([git_bin] + command, workdir, inc_err, **kwargs)
+    try:
+        return run_cmd([git_bin] + command, workdir, **kwargs)
+    except sp.CalledProcessError, e:
+        raise GitError({'command': command,
+                        'workdir': workdir,
+                        'options': kwargs,
+                        'super_exc': e})
 
 
 def get_rev(repo_dir, id='HEAD'):

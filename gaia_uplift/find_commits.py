@@ -115,7 +115,7 @@ def add_commit(repo_dir, upstream, commits, commit):
 
     try:
         full_rev = git.get_rev(repo_dir, id=commit)
-    except sp.CalledProcessError, e:
+    except git.GitError, e:
         full_rev = None
     
     if not full_rev:
