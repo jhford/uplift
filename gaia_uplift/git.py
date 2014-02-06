@@ -45,6 +45,7 @@ def run_cmd(command, workdir, read_out=True, env=None, delete_env=None, **kwargs
         }
         json.dump(log_line, cmd_log, indent=2)
         cmd_log.write(',\n')
+        cmd_log.flush()
     return func(command, cwd=workdir, env=full_env, **kwargs)
 
 def git_op(command, workdir=os.getcwd(), **kwargs):
