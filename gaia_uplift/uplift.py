@@ -61,7 +61,10 @@ def uplift_bug(repo_dir, bug_id, commit, to_branches, from_branch="master"):
     for branch in to_branches:
         print "\n", "="*80
         print "Doing a cherry-pick for bug %s of commit %s to branch %s" % (bug_id, commit, branch)
-        new_rev = git.cherry_pick(repo_dir, commit, branch, from_branch)
+        try:
+            new_rev = git.cherry_pick(repo_dir, commit, branch, from_branch)
+        except git.GitError:
+            new_rev = None
         if new_rev:
             print "Success!"
             uplift_info['success'][branch] = new_rev
@@ -100,7 +103,7 @@ def uplift(repo_dir, gaia_url, requirements, start_fresh=True):
         if all_bugs[bug_id].has_key('commits'):
             with_commits[bug_id] = all_bugs[bug_id]
 
-    util.write_json(requirements_file, report)
+    util.write_json(requirements_file, with_commits)
     ordered_commits = order_commits(repo_dir, with_commits)
 
     uplift = dict([(x, {}) for x in ordered_commits])
