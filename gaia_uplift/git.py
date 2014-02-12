@@ -54,12 +54,11 @@ def git_op(command, workdir=os.getcwd(), **kwargs):
     try:
         return run_cmd([git_bin] + command, workdir, **kwargs)
     except sp.CalledProcessError, e:
-        print e
-        traceback.print_exc()
         raise GitError({'command': command,
                         'workdir': workdir,
                         'options': kwargs,
-                        'super_exc': e})
+                        'super_exc': e,
+                        'traceback': traceback.format_exc()})
 
 
 def get_rev(repo_dir, id='HEAD'):
