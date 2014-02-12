@@ -91,6 +91,13 @@ def branches(repo_dir):
     cmd_out = git_op(["branch"], workdir=repo_dir)
     return _parse_branches(cmd_out)
 
+def current_branch(repo_dir):
+    cmd_out = git_op(["branch"], workdir=repo_dir)
+    for line in [x.strip() for x in cmd_out.split('\n')]:
+        if line[:2] == "* ":
+            return line[2:]
+    return None
+
 
 def commit_on_branch(repo_dir, commit, branch):
     """ Determine if commit is on a local branch"""
@@ -126,7 +133,7 @@ def determine_cherry_pick_master_number(repo_dir, commit, upstream):
         return None
 
 
-def checkout(repo_dir, commitish=None, tracking=None, branch_name=None, files=None):
+def checkout(repo_dir, commitish=None, tracking=None, branch_name=None):
     cmd = ["checkout"]
     if tracking:
         cmd.extend(["-t", tracking])
@@ -134,9 +141,6 @@ def checkout(repo_dir, commitish=None, tracking=None, branch_name=None, files=No
         cmd.extend(["-b", branch_name])
     if commitish:
         cmd.append(commitish)
-    if files:
-        cmd.append("--")
-        cmd.extend(files)
     git_op(cmd, workdir=repo_dir)
 
 
