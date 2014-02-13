@@ -10,11 +10,10 @@
     },
     "blocking_flag": "cf_blocking_b2g",
     "blocking_rules": {
-        "1.3+": ["v1.3"],
-        "koi+": ["v1.3", "v1.2"],
+        "koi+": ["v1.2"]
     },
     "patch_rules": {
-        "approval-gaia-v1.2": ["v1.3", "v1.2"],
+        "approval-gaia-v1.2": ["v1.2"],
         "approval-gaia-v1.3": ["v1.3"]
     }
 }
