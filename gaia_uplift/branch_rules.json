@@ -12,12 +12,8 @@
     "blocking_rules": {
         "1.3+": ["v1.3"],
         "koi+": ["v1.3", "v1.2"],
-        "leo+": ["v1.3", "v1.2", "v1-train"],
-        "tef+": ["v1.3", "v1.2", "v1-train", "v1.0.1"],
-        "shira+": ["v1.3", "v1.2", "v1-train", "v1.0.1"]
     },
     "patch_rules": {
-        "approval-gaia-v1": ["v1.3", "v1.2", "v1-train"],
         "approval-gaia-v1.2": ["v1.3", "v1.2"],
         "approval-gaia-v1.3": ["v1.3"]
     }
