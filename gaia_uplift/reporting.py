@@ -22,7 +22,7 @@ def trim_words(s, max=90):
 def display_uplift_requirements(requirements, max_summary=90):
     """Generate a PrettyTable that shows the bug id, branch status
     and first up to 100 chars of the summary"""
-    branches = c.read_value('enabled_branches')
+    branches = c.read_value('repository.enabled_branches')
     headers = ['Bug'] + ['%s status' % x for x in branches] + ['Summary']
     t = pt.PrettyTable(headers, sortby="Bug")
     t.align['Bug'] = "l"
@@ -47,7 +47,7 @@ def display_uplift_requirements(requirements, max_summary=90):
 def display_uplift_report(report, max_summary=90):
     """Generate a PrettyTable that shows the bug id, branch status
     and first up to 100 chars of the summary"""
-    branches = c.read_value('enabled_branches')
+    branches = c.read_value('repository.enabled_branches')
     headers = ['Bug'] + ['%s commit' % x for x in ['master'] + branches] + ['Summary']
     t = pt.PrettyTable(headers, sortby="Bug")
     t.align['Bug'] = "l"

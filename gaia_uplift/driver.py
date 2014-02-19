@@ -44,7 +44,6 @@ def main():
     print "Configuration"
     print "=" * 80
     print "Using Bugzilla queries in %s" % query_file
-    print "Using Branch Rules in %s" % rules_file
     print "Gaia URL: %s" % gaia_url
     print "Gaia Local Path: %s" % gaia_path
     print "=" * 80

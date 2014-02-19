@@ -1,5 +1,7 @@
 {
-    "enabled_branches": ["v1", "v2", "v3"],
+    "repository": {
+        "enabled_branches": ["v1", "v2", "v3"]
+    },
     "rules": {
         "status_flags": {
             "v1": "v1-status",

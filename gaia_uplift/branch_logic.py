@@ -9,7 +9,7 @@ def flags_to_set(for_branches):
     pairings of flag name and flag value.  For the purposes of this
     program, we always use 'fixed'."""
     fb = []
-    branches = c.read_value('enabled_branches')
+    branches = c.read_value('repository.enabled_branches')
     status_flags = c.read_value('rules.status_flags')
     for b in [x for x in for_branches if x in branches]:
         if b in status_flags.keys():
@@ -24,7 +24,7 @@ def fixed_on_branches(bug):
     to do correctly.  If you git revert a commit, the original commit
     is still 'on' the branch, but substantively absent"""
     status_flags = c.read_value('rules.status_flags')
-    branches = c.read_value('enabled_branches')
+    branches = c.read_value('repository.enabled_branches')
     # I should figure out what this variable actually is and rename it!
     _branches = dict([(status_flags[k],k) for k in status_flags.keys()])
     b = []
@@ -42,7 +42,7 @@ def needed_on_branches(bug):
     needed_on = []
     fixed_on = fixed_on_branches(bug)
 
-    branches = c.read_value('enabled_branches')
+    branches = c.read_value('repository.enabled_branches')
     blocking_flag = bug.get(c.read_value('rules.blocking_flag'))
     blocking_rules = c.read_value('rules.blocking_rules')
     patch_rules = c.read_value('rules.patch_rules')

@@ -192,7 +192,7 @@ def _display_push_info(push_info):
 
 
 def push(repo_dir):
-    branches = c.read_value('enabled_branches')
+    branches = c.read_value('repository.enabled_branches')
     preview_push_info = git.push(
         repo_dir, remote="origin",
         branches=branches, dry_run=True)

@@ -344,7 +344,7 @@ def create_gaia(repo_dir, gaia_url):
     git_op(["remote", "add", "origin", gaia_url], workdir=repo_dir)
     print "Fetching remote references from remote"
     git_op(["fetch", "origin"], workdir=repo_dir)
-    branches = c.read_value('enabled_branches')
+    branches = c.read_value('repository.enabled_branches')
     for branch in branches + ['master']:
         recreate_branch(repo_dir, branch, remote="origin")
 
