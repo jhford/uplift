@@ -4,21 +4,6 @@ import json
 STRING='string'
 INT='int'
 
-
-def init(alt_json=None):
-    global config
-    global config_file
-    if alt_json:
-        config_file = alt_json
-    else:
-        config_file = os.path.join(os.path.dirname(os.getcwd()), 'config.json')
-    if os.path.exists(json_file):
-        with open(json_file) as f:
-            config = json.load(f)
-    else:
-        config = {}
-
-
 def lookup(key, obj):
     """Take a key like john.ford.test and return obj[john][ford][test]
     if that's a valid thing to do"""
@@ -79,9 +64,9 @@ def ask_for_value(name, t=STRING):
     return valid_input
 
 
-def read_value(key, ask_if_missing=False):
-    if not 'config' in globals():
-        init()
+def read_value(key, ask_if_missing=False, json_file=os.path.join(os.path.dirname(__file__), 'config.json')):
+    with open(json_file) as f:
+        config = json.load(f)
 
     if ask_if_missing:
         if present(key, config):
@@ -89,6 +74,8 @@ def read_value(key, ask_if_missing=False):
         else:
             new_value = ask_for_value(key, t=STRING)
             store(key, new_value, config)
+            with open(json_file, 'w') as f:
+                json.dump(config, f)
             return lookup(key, config)
     else:
         return lookup(key, config)
