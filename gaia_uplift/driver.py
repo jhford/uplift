@@ -15,6 +15,7 @@ import merge_hd
 import git
 import reporting
 import util
+import configuration as c
 
 def find_arg(args, option, default=None):
     if option in args:
@@ -39,7 +40,7 @@ def main():
     args, query_file = find_arg(args, '--query-file', default_query_file)
     default_gaia_path = os.path.abspath(os.path.join(os.getcwd(), 'gaia'))
     args, gaia_path = find_arg(args, '--gaia-path', default_gaia_path)
-    args, gaia_url = find_arg(args, '--gaia-url', "git@github.com:mozilla-b2g/gaia.git")
+    args, gaia_url = find_arg(args, '--gaia-url', c.read_value('repository.url'))
 
     print "Configuration"
     print "=" * 80

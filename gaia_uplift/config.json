@@ -1,0 +1,31 @@
+{
+    "bugzilla": {
+        "api": {
+            "host": "https://api-dev.bugzilla.mozilla.org/tip/",
+            "attempts": 4,
+            "delay": 2
+        }
+    },
+    "repository": {
+        "enabled_branches": ["v1.3", "v1.2"],
+        "url": "git@github.com:mozilla-b2g/gaia.git"
+    },
+    "rules": {
+        "status_flags": {
+            "v1.3": "cf_status_b2g_1_3",
+            "v1.2": "cf_status_b2g_1_2",
+            "v1-train": "cf_status_b2g18",
+            "v1.0.1": "cf_status_b2g18_1_0_1",
+            "v1.0.0": "cf_status_b2g18_1_0_0",
+            "v1.1.0hd": "cf_status_b2g_1_1_hd"
+        },
+        "blocking_flag": "cf_blocking_b2g",
+        "blocking_rules": {
+            "koi+": ["v1.2"]
+        },
+        "patch_rules": {
+            "approval-gaia-v1.2": ["v1.2"],
+            "approval-gaia-v1.3": ["v1.3"]
+        }
+    }
+}
