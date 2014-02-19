@@ -2,11 +2,11 @@ import json
 import traceback
 import prettytable as pt
 
-import branch_logic
 import util
 import git
 import bzapi
 import uplift
+import configuration as c
 
 
 def trim_words(s, max=90):
@@ -22,7 +22,8 @@ def trim_words(s, max=90):
 def display_uplift_requirements(requirements, max_summary=90):
     """Generate a PrettyTable that shows the bug id, branch status
     and first up to 100 chars of the summary"""
-    headers = ['Bug'] + ['%s status' % x for x in branch_logic.branches] + ['Summary']
+    branches = c.read_value('enabled_branches')
+    headers = ['Bug'] + ['%s status' % x for x in branches] + ['Summary']
     t = pt.PrettyTable(headers, sortby="Bug")
     t.align['Bug'] = "l"
     t.align['Summary'] = "l"
@@ -31,7 +32,7 @@ def display_uplift_requirements(requirements, max_summary=90):
         row = [bug_id]
         needed_on = bug['needed_on']
         fixed_on = bug['already_fixed_on']
-        for branch in branch_logic.branches:
+        for branch in branches:
             if branch in fixed_on:
                 row.append("fixed")
             elif branch in needed_on:
@@ -46,7 +47,8 @@ def display_uplift_requirements(requirements, max_summary=90):
 def display_uplift_report(report, max_summary=90):
     """Generate a PrettyTable that shows the bug id, branch status
     and first up to 100 chars of the summary"""
-    headers = ['Bug'] + ['%s commit' % x for x in ['master'] + branch_logic.branches] + ['Summary']
+    branches = c.read_value('enabled_branches')
+    headers = ['Bug'] + ['%s commit' % x for x in ['master'] + branches] + ['Summary']
     t = pt.PrettyTable(headers, sortby="Bug")
     t.align['Bug'] = "l"
     t.align['Summary'] = "l"
@@ -55,7 +57,7 @@ def display_uplift_report(report, max_summary=90):
         row = [bug_id]
         master_commits = bug['commits']
         row.append("\n".join([x[:7] for x in master_commits]) if len(master_commits) > 0 else "skipped")
-        for branch in branch_logic.branches:
+        for branch in branches:
             branch_commits = []
             for mcommit in master_commits:
                 if bug.has_key('uplift_status'):

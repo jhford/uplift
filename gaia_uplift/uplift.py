@@ -14,6 +14,7 @@ import branch_logic
 import util
 import find_commits
 import reporting
+import configuration as c
 
 
 # Should be smarter about these cache files and either manage them in sets
@@ -191,9 +192,10 @@ def _display_push_info(push_info):
 
 
 def push(repo_dir):
+    branches = c.read_value('enabled_branches')
     preview_push_info = git.push(
         repo_dir, remote="origin",
-        branches=branch_logic.branches, dry_run=True)
+        branches=branches, dry_run=True)
     print "This is what you'd be pushing: "
     _display_push_info(preview_push_info)
     prompt = "push, a branch name or cancel: "
@@ -203,13 +205,13 @@ def push(repo_dir):
         if user_input == 'push':
             actual_push_info = git.push(
                 repo_dir, remote="origin",
-                branches=branch_logic.branches,
+                branches=branches,
                 dry_run=False)
             break
         elif user_input == 'cancel':
             print "Cancelling"
             break
-        elif user_input in branch_logic.branches:
+        elif user_input in branches:
             print "Commits that will be pushed to %s on branch %s" % (preview_push_info['url'], user_input)
             print "="*80
             start, end = preview_push_info['branches'][user_input]
