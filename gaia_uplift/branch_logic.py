@@ -2,27 +2,15 @@
 import bzapi
 import os.path
 import json
-
-def load_rules(rules_file):
-    # This function burns my eyes!
-    with open(rules_file) as f:
-        branch_rules = json.loads(f.read())
-    global branches
-    global status_flags
-    global blocking_flag
-    global blocking_rules
-    global patch_rules
-    branches = branch_rules['branches']
-    status_flags = branch_rules['status_flags']
-    blocking_flag = branch_rules['blocking_flag']
-    blocking_rules = branch_rules['blocking_rules']
-    patch_rules = branch_rules['patch_rules']
+import configuration as c
 
 def flags_to_set(for_branches):
     """Take a list of branches and return a dictionary that contains
     pairings of flag name and flag value.  For the purposes of this
     program, we always use 'fixed'."""
     fb = []
+    branches = c.read_value('enabled_branches')
+    status_flags = c.read_value('rules.status_flags')
     for b in [x for x in for_branches if x in branches]:
         if b in status_flags.keys():
             fb.append(status_flags[b])
@@ -35,6 +23,9 @@ def fixed_on_branches(bug):
     look at the contents of the repository because that's impossible
     to do correctly.  If you git revert a commit, the original commit
     is still 'on' the branch, but substantively absent"""
+    status_flags = c.read_value('rules.status_flags')
+    branches = c.read_value('enabled_branches')
+    # I should figure out what this variable actually is and rename it!
     _branches = dict([(status_flags[k],k) for k in status_flags.keys()])
     b = []
     for x in ('fixed', 'verified'):
@@ -51,14 +42,18 @@ def needed_on_branches(bug):
     needed_on = []
     fixed_on = fixed_on_branches(bug)
 
+    branches = c.read_value('enabled_branches')
+    blocking_flag = bug.get(c.read_value('rules.blocking_flag'))
+    blocking_rules = c.read_value('rules.blocking_rules')
+    patch_rules = c.read_value('rules.patch_rules')
+
     def _a(x):
         for y in x:
             if not y in needed_on and not y in fixed_on and y in branches:
                 needed_on.append(y)
 
-    _blocking_flag = bug.get(blocking_flag)
-    if _blocking_flag in blocking_rules.keys():
-        _a(blocking_rules[_blocking_flag])
+    if blocking_flag in blocking_rules.keys():
+        _a(blocking_rules[blocking_flag])
 
     for flag in patch_rules.keys():
         for a in bug.get('attachments', []):

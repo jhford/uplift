@@ -1,19 +1,20 @@
 import unittest
 import os
 import gaia_uplift.branch_logic as subject
+import gaia_uplift.configuration as c
 import util as u
 
 
+test_config = os.path.join(os.path.dirname(__file__), "branch_rules_tests_config.json")
+
 class BranchLogicTests(unittest.TestCase):
     def setUp(self):
-        subject.load_rules(
-            os.path.join(os.path.dirname(__file__),
-                         "branch_rules_test.json")
-        )
+        self.old_json_file = c.json_file
+        c.change_file(test_config)
 
-class LoadRules(BranchLogicTests):
-    def test_load_rules(self):
-        self.assertEqual(subject.blocking_flag, 'blocking')
+    def tearDown(self):
+        c.change_file(self.old_json_file)
+
 
 class TestFlagsToSet(BranchLogicTests):
     def test_no_flags(self):
