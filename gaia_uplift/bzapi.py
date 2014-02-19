@@ -14,13 +14,13 @@ import requests
 
 import util
 import bugdb
+import configuration as c
 
 class FailedBZAPICall(Exception): pass
 class InvalidBZAPICredentials(Exception): pass
 class MultipleQueryParam(Exception): pass
 
-api_version = "tip"
-api_host = "https://api-dev.bugzilla.mozilla.org/%s/" % api_version
+api_host = c.read_value('bugzilla.apihost')
 
 def _raw_query(method, url, attempt=1, **kwargs):
     def write_log():
