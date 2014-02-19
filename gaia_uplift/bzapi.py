@@ -20,7 +20,6 @@ class FailedBZAPICall(Exception): pass
 class InvalidBZAPICredentials(Exception): pass
 class MultipleQueryParam(Exception): pass
 
-api_host = c.read_value('bugzilla.apihost')
 
 def _raw_query(method, url, attempt=1, **kwargs):
     def write_log():
@@ -73,19 +72,19 @@ def _raw_query(method, url, attempt=1, **kwargs):
             raise FailedBZAPICall(super_exception=e)
 
 
-def do_query(url, method='get', retry=False, attempts=5, delay=2, **kwargs):
+def do_query(url, method='get', retry=False, **kwargs):
     """Light wrapper around the BzAPI which takes an API url,
     fetches the data then returns the data as a Python
     dictionary.  Only API errors are caught, and those are
     raised as FailedBZAPICall exceptions"""
 
-    for i in range(0, attempts):
+    for i in range(0, c.read_value('bugzilla.api.attempts')):
         try:
             json_data = _raw_query(method, url, i+1, **kwargs)
             return json_data
         except Exception, e:
             print "Query attempt %i failed: %s" % (i, e)
-            time.sleep(delay)
+            time.sleep(c.read_value('bugzilla.api.delay'))
     raise e
 
 
@@ -105,6 +104,7 @@ def compute_url(query, endpoint):
     here so that they don't end up in other parts of the program"""
     full_query = copy.deepcopy(query)
     full_query.update(credentials)
+    api_host = c.read_value('bugzilla.api.host')
     return "%s%s%s?%s" % (api_host, "" if api_host.endswith("/") else "/", endpoint, urllib.urlencode(full_query))
 
 

@@ -4,6 +4,12 @@ import json
 STRING='string'
 INT='int'
 
+json_file = os.path.join(os.path.dirname(__file__), 'config.json')
+
+def change_file(filename):
+    global json_file
+    json_file = filename
+
 def lookup(key, obj):
     """Take a key like john.ford.test and return obj[john][ford][test]
     if that's a valid thing to do"""
@@ -64,7 +70,7 @@ def ask_for_value(name, t=STRING):
     return valid_input
 
 
-def read_value(key, ask_if_missing=False, json_file=os.path.join(os.path.dirname(__file__), 'config.json')):
+def read_value(key, ask_if_missing=False):
     with open(json_file) as f:
         config = json.load(f)
 

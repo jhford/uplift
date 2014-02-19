@@ -2,6 +2,7 @@ import unittest
 import os
 import copy
 import gaia_uplift.bzapi as subject
+import gaia_uplift.configuration as c
 
 
 
@@ -43,11 +44,13 @@ class ComputeUrl(BZAPITest):
 
     def test_no_query(self):
         url = subject.compute_url({}, 'sample')
-        self.assertEqual('%ssample?username=test_user%%40bugzilla.com&password=testpassword' % subject.api_host, url)
+        expected = '%ssample?username=test_user%%40bugzilla.com&password=testpassword'
+        self.assertEqual(expected % c.read_value('bugzilla.api.host'), url)
 
     def test_simple_query(self):
         url = subject.compute_url({'a': 'b'}, 'sample')
-        self.assertEqual('%ssample?a=b&username=test_user%%40bugzilla.com&password=testpassword' % subject.api_host, url)
+        expected = '%ssample?a=b&username=test_user%%40bugzilla.com&password=testpassword'
+        self.assertEqual(expected % c.read_value('bugzilla.api.host'), url)
 
 
 class ParseBugzillaQuery(BZAPITest):
