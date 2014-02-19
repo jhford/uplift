@@ -17,40 +17,18 @@ import reporting
 import util
 import configuration as c
 
-def find_arg(args, option, default=None):
-    if option in args:
-        option_index = args.index(option)
-        data_index = option_index + 1
-        new_args = args[:]
-        try:
-            data = args[data_index]
-        except:
-            print "ERROR: your option sucks!"
-            raise
-        del new_args[data_index]
-        del new_args[option_index]
-        return (new_args, data) 
-    else:
-        return (args, default)
-    
-
 def main():
     args = sys.argv
-    default_query_file = os.path.join(os.path.dirname(__file__), "uplift_queries.dat")
-    args, query_file = find_arg(args, '--query-file', default_query_file)
-    default_gaia_path = os.path.abspath(os.path.join(os.getcwd(), 'gaia'))
-    args, gaia_path = find_arg(args, '--gaia-path', default_gaia_path)
-    args, gaia_url = find_arg(args, '--gaia-url', c.read_value('repository.url'))
 
-    print "Configuration"
-    print "=" * 80
-    print "Using Bugzilla queries in %s" % query_file
-    print "Gaia URL: %s" % gaia_url
-    print "Gaia Local Path: %s" % gaia_path
-    print "=" * 80
+    enabled_branches = c.read_value('repository.enabled_branches')
+    config_queries = c.read_value('queries')
+    gaia_url = c.read_value('repository.url')
 
-    with open(query_file, 'rb') as f:
-        queries = [x.strip() for x in f.readlines() if not x.strip().startswith("#") and not x.strip() == ""]
+    gaia_path = gaia_url.split('/')[-1]
+
+    queries = []
+    for branch in enabled_branches:
+        queries.extend(config_queries.get(branch, []))
 
     if len(args) < 2:
         print "You must specify a command"
