@@ -11,8 +11,8 @@ class GitTestBase(unittest.TestCase):
         self.scratch = tempfile.mkdtemp(prefix='.git_unit_test_scratch_', dir='.')
 
     def tearDown(self):
-        #shutil.rmtree(self.scratch)
-        pass
+        # TODO: Is it possible to only delete directory on a failed test?
+        shutil.rmtree(self.scratch)
 
 
 class RunCmd(GitTestBase):
