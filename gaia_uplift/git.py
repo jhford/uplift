@@ -207,6 +207,8 @@ def reset(repo_dir, id="HEAD", hard=True):
 
 def a_before_b(repo_dir, branch, commit_times, a, b):
     """Return True if a's commit time on branch is older than b's commit time on branch"""
+    # commit_times is a dictionary that gets passed in by reference and is used to
+    # cache the output of the time parsing logic.  it can be {}
     def fix_git_timestamp(timestamp):
         """Yay git for generating non-ISO8601 datetime stamps.  Git generates, e.g.
         2013-01-29 16:06:52 -0800 but ISO8601 would be 2013-01-29T16:06:52-0800"""

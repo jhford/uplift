@@ -72,6 +72,11 @@ class TestWithRepository(GitTestBase):
     def create_commits(self, contents):
         commits = []
         for change in contents:
+            commit_time = "%d +0000" % (self.i + 1000000000)
+            env = {
+                'GIT_AUTHOR_DATE': commit_time,
+                'GIT_COMMITTER_DATE': commit_time
+            }
             for fn in list(change.keys()):
                 filename = os.path.join(self.scratch, fn)
                 with open(filename, 'w+') as f:
@@ -79,7 +84,7 @@ class TestWithRepository(GitTestBase):
             subject.git_op(['add'] + list(change.keys()), self.scratch)
             subject.git_op(
                 ['commit', '-m', 'commit-%d' % self.i] + list(change.keys()),
-                self.scratch)
+                self.scratch, env=env)
             subject.git_op(['tag', str(self.i)], self.scratch)
             commits.append(subject.git_op(['rev-parse', 'HEAD'], self.scratch).strip())
             self.i += 1
@@ -289,4 +294,49 @@ class SimpleGitTests(TestWithRepository):
         branch_commit = subject.cherry_pick(self.scratch, merge_commit, 'newbranch')
         self.assertTrue(subject.commit_on_branch(self.scratch, branch_commit, 'newbranch'))
         self.assertFalse(subject.commit_on_branch(self.scratch, branch_commit, 'master'))
+
+    def test_a_before_b(self):
+        contents = [{'A': '1'}, {'A': '2'}, {'A': '3'}]
+        commits = self.create_repo(contents)
+        cache = {}
+        self.assertTrue(
+            subject.a_before_b(self.scratch, 'master', {}, commits[0], commits[1])
+        )
+        self.assertTrue(
+            subject.a_before_b(self.scratch, 'master', cache, commits[0], commits[1])
+        )
+        self.assertFalse(
+            subject.a_before_b(self.scratch, 'master', {}, commits[1], commits[0])
+        )
+        self.assertFalse(
+            subject.a_before_b(self.scratch, 'master', cache, commits[1], commits[0])
+        )
+        self.assertTrue(
+            subject.a_before_b(self.scratch, 'master', {}, commits[0], commits[2])
+        )
+        self.assertTrue(
+            subject.a_before_b(self.scratch, 'master', cache, commits[0], commits[2])
+        )
+        self.assertFalse(
+            subject.a_before_b(self.scratch, 'master', {}, commits[2], commits[0])
+        )
+        self.assertFalse(
+            subject.a_before_b(self.scratch, 'master', cache, commits[2], commits[0])
+        )        
+
+    def test_sort_commits(self):
+        contents = [{'A': x} for x in range(0,10)]
+        commits = self.create_repo(contents)
+        # Let's shuffle the commits by sorting them alphabetically
+        shuffled_commits = sorted(commits)
+        self.assertNotEqual(commits, shuffled_commits)
+        # Let's also make sure that already sorted input comes out in the
+        # same order
+        self.assertEqual(commits,
+                         subject.sort_commits(self.scratch, commits, 'master'))
+        self.assertEqual(commits,
+                         subject.sort_commits(self.scratch, shuffled_commits, 'master'))
+        
+
+
 
