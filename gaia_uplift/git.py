@@ -316,8 +316,10 @@ def _cache_dir(repo_dir):
 
 
 def create_gaia(repo_dir, gaia_url):
+    # These two lines are stupid.  They break subtlely when
+    # repo_dir isn't an absolute path. 
     repo_dir_p = os.path.split(repo_dir.rstrip(os.sep))[0]
-    cache_dir = _cache_dir(repo_dir)
+    cache_dir = _cache_dir(os.path.abspath(repo_dir))
 
     # Initialize or update the cached copy of gaia
     if not os.path.isdir(cache_dir):

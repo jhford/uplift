@@ -24,7 +24,7 @@ def main():
     config_queries = c.read_value('queries')
     gaia_url = c.read_value('repository.url')
 
-    gaia_path = gaia_url.split('/')[-1]
+    gaia_path = os.path.join(os.getcwd(), gaia_url.split('/')[-1])
 
     queries = []
     for branch in enabled_branches:
