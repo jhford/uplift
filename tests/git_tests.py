@@ -246,3 +246,47 @@ class SimpleGitTests(TestWithRepository):
             #subject.reset(self.scratch)
         subject.merge(self.scratch, 'newbranch', ff_only=False, strategy='ours')
         self.assertEqual(2, len(subject.find_parents(self.scratch, 'master')))
+
+    def test_cherry_pick_noop(self):
+        contents = [{'A': '1'}]
+        commits = self.create_repo(contents)
+        subject.checkout(self.scratch, tracking='master', branch_name='other')
+        with self.assertRaises(subject.GitNoop):
+            result = subject.cherry_pick(self.scratch, commits[0], 'other', 'master') 
+
+    def test_cherry_pick_commit_not_on_upstream(self):
+        contents = [{'A': '1', 'B': '2'}]
+        commits = self.create_repo(contents)
+        subject.checkout(self.scratch, branch_name='branch')
+        branch_contents = [{'C': '3'}]
+        branch_commits = self.create_commits(branch_contents)
+        subject.checkout(self.scratch, branch_name='other_branch')
+        with self.assertRaises(subject.GitError):
+            subject.cherry_pick(self.scratch, branch_commits[0], 'other_branch', 'master')
+
+    def test_cherry_pick_commit_not_merge_commit(self):
+        contents = [{'A': '1', 'B': '2'}]
+        commits = self.create_repo(contents)
+        subject.checkout(self.scratch, branch_name='newbranch', tracking='master')
+        subject.checkout(self.scratch, 'master')
+        new_master_contents = [{'A': '3'}]
+        new_master_commits = self.create_commits(new_master_contents)
+        branch_commit = subject.cherry_pick(self.scratch, new_master_commits[0], 'newbranch')
+        self.assertTrue(subject.commit_on_branch(self.scratch, branch_commit, 'newbranch'))
+        self.assertFalse(subject.commit_on_branch(self.scratch, branch_commit, 'master'))
+
+    def test_cherry_pick_commit_is_merge_commit(self):
+        contents = [{'A': '1', 'B': '2'}]
+        commits = self.create_repo(contents)
+        subject.checkout(self.scratch, branch_name='newbranch', tracking='master')
+        subject.checkout(self.scratch, branch_name='pr_branch', tracking='master')
+        pr_contents = [{'C': '3'}]
+        pr_commits = self.create_commits(pr_contents)
+        subject.checkout(self.scratch, 'master')
+        subject.merge(self.scratch, 'pr_branch', no_ff=True)
+        merge_commit = subject.get_rev(self.scratch)
+        self.assertEqual(sorted([pr_commits[0], commits[-1]]), sorted(subject.find_parents(self.scratch, merge_commit)))
+        branch_commit = subject.cherry_pick(self.scratch, merge_commit, 'newbranch')
+        self.assertTrue(subject.commit_on_branch(self.scratch, branch_commit, 'newbranch'))
+        self.assertFalse(subject.commit_on_branch(self.scratch, branch_commit, 'master'))
+

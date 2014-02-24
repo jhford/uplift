@@ -12,7 +12,10 @@ import configuration as c
 
 class GitError(Exception): pass
 
-class PushFailure(Exception): pass
+# TODO: Come up with a better name!
+class GitNoop(GitError): pass
+
+class PushFailure(GitError): pass
 
 git_bin = 'git'
 valid_id_regex = "[a-fA-F0-9]{7,40}"
@@ -143,10 +146,14 @@ def checkout(repo_dir, commitish=None, tracking=None, branch_name=None):
     git_op(cmd, workdir=repo_dir)
 
 
-def merge(repo_dir, branch_from, strategy=None, strategy_options=None, ff_only=False):
+def merge(repo_dir, branch_from, strategy=None, strategy_options=None, ff_only=False, no_ff=False):
     cmd = ["merge"]
+    if ff_only and no_ff:
+        raise GitError("You're asking for a fast-forward merge that's not a fast-forward merge")
     if ff_only:
         cmd.append("--ff-only")
+    if no_ff:
+        cmd.append("--no-ff")
     if strategy:
         cmd.extend(["-s", strategy])
     if strategy_options:
@@ -168,23 +175,16 @@ def cherry_pick(repo_dir, commit, branch, upstream='master'):
     # If the branch already has this commit, we don't want to re-cherry-pick it
     # but instead would like to return the original commit
     if not commit_on_branch(repo_dir, commit, upstream):
-        print "Commit '%s' is not on the branch '%s' which we are using as upstream" % (commit, upstream)
-        return None
+        raise GitError("commit %s is not on upstream branch %s" % (commit, upstream))
     elif commit_on_branch(repo_dir, commit, branch):
-        print "Commit '%s' is already on branch '%s'" % (commit, branch)
-        return commit
+        raise GitNoop("trying to cherry-pick '%s' to '%s' which already contains it" % (commit, branch))
     else:
         command = ["cherry-pick", "-x"] # -x leaves some breadcrumbs
         master_num = determine_cherry_pick_master_number(repo_dir, commit, upstream)
         if master_num:
             command.append(master_num)
         command.append(commit)
-        try:
-            git_op(command, workdir=repo_dir)
-        except sp.CalledProcessError, e:
-            git_op(["status"])
-            git_op(["diff"])
-            return None
+        git_op(command, workdir=repo_dir)
     return get_rev(repo_dir)
 
 
@@ -256,7 +256,7 @@ def sort_commits(repo_dir, commits, branch):
 
 def find_parents(repo_dir, commit):
     """Return a list of commit ids that are parents to 'commit'"""
-    return git_op(["log", "-n1", "--pretty=%P", commit], workdir=repo_dir).split(' ')
+    return [x.strip() for x in git_op(["log", "-n1", "--pretty=%P", commit], workdir=repo_dir).split(' ')]
 
 
 def push(repo_dir, remote="origin", branches=[], dry_run=True):

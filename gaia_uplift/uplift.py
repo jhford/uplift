@@ -64,8 +64,12 @@ def uplift_bug(repo_dir, bug_id, commit, to_branches, from_branch="master"):
         print "Doing a cherry-pick for bug %s of commit %s to branch %s" % (bug_id, commit, branch)
         try:
             new_rev = git.cherry_pick(repo_dir, commit, branch, from_branch)
+        except git.GitNoop:
+            # TODO: Do something smarter here
+            new_rev = commit
         except git.GitError:
             new_rev = None
+
         if new_rev:
             print "Success!"
             uplift_info['success'][branch] = new_rev
