@@ -302,6 +302,8 @@ def push(repo_dir, remote="origin", branches=[], dry_run=True):
             continue
         local_branch, remote_branch = [x.lstrip('refs/heads/') for x in ref_spec.split(':')]
         first_commit, last_commit = rev_range.split('..')
+        first_commit = get_rev(repo_dir, first_commit)
+        last_commit = get_rev(repo_dir, last_commit)
         push_data['branches'][local_branch] = (first_commit, last_commit)
     return push_data
 

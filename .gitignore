@@ -15,5 +15,6 @@ uplift_report.json
 /include
 cmds.log
 api-calls.log
+.scratch_*
 .git_unit_test_scratch*
 .bugs.pcl

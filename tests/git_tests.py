@@ -8,7 +8,7 @@ import gaia_uplift.git as subject
 
 class GitTestBase(unittest.TestCase):
     def setUp(self):
-        self.scratch = tempfile.mkdtemp(prefix='.git_unit_test_scratch_', dir='.')
+        self.scratch = tempfile.mkdtemp(prefix='.scratch_', dir='.')
 
     def tearDown(self):
         # TODO: Is it possible to only delete directory on a failed test?
@@ -87,6 +87,46 @@ class TestWithRepository(GitTestBase):
                 self.scratch, env=env)
             subject.git_op(['tag', str(self.i)], self.scratch)
             commits.append(subject.git_op(['rev-parse', 'HEAD'], self.scratch).strip())
+            self.i += 1
+        return commits
+
+
+class TestWithManyRepositories(unittest.TestCase):
+
+    def create_repos(self, count, common_contents):
+        self.i = 0
+        self.scratch = [tempfile.mkdtemp(prefix='.scratch_', dir='.') for x in range(count)]
+        subject.git_op(['init'], self.scratch[0])
+        commits = self.create_commits(0, common_contents)
+        for x in range(1, count):
+            shutil.rmtree(self.scratch[x])
+            subject.git_op(['clone', os.path.abspath(self.scratch[0]), self.scratch[x]])
+        return commits
+
+
+    def tearDown(self):
+        #[shutil.rmtree(self.scratch[x]) for x in self.scratch]
+        pass
+        
+
+    def create_commits(self, n, contents):
+        commits = []
+        for change in contents:
+            commit_time = "%d +0000" % (self.i + 1000000000)
+            env = {
+                'GIT_AUTHOR_DATE': commit_time,
+                'GIT_COMMITTER_DATE': commit_time
+            }
+            for fn in list(change.keys()):
+                filename = os.path.join(self.scratch[n], fn)
+                with open(filename, 'w+') as f:
+                    f.write(str(change[fn]))
+            subject.git_op(['add'] + list(change.keys()), self.scratch[n])
+            subject.git_op(
+                ['commit', '-m', 'commit-%d' % self.i] + list(change.keys()),
+                self.scratch[n], env=env)
+            subject.git_op(['tag', str(self.i)], self.scratch[n])
+            commits.append(subject.git_op(['rev-parse', 'HEAD'], self.scratch[n]).strip())
             self.i += 1
         return commits
 
@@ -336,7 +376,60 @@ class SimpleGitTests(TestWithRepository):
                          subject.sort_commits(self.scratch, commits, 'master'))
         self.assertEqual(commits,
                          subject.sort_commits(self.scratch, shuffled_commits, 'master'))
+
+
+class GitPushTests(TestWithManyRepositories):
+    def test_dry_run_clean(self):
+        contents = [{'A': x} for x in range(5)] 
+        common_commits = self.create_repos(2, contents)
+        new_content = [{'A': x} for x in range(5, 10)]
+        new_commits = self.create_commits(1, new_content)
         
+        expected = {
+            'url': os.path.abspath(self.scratch[0]),
+            'branches':{
+                'master': (common_commits[-1], new_commits[-1])
+            }
+        }
+        actual = subject.push(self.scratch[1], 'origin', ['master'])
+        self.assertEqual(expected['url'], actual['url'])
+        self.assertEqual(expected['branches'], actual['branches'])
+        self.assertEqual(expected, actual)
+
+        with self.assertRaises(subject.GitError):
+            # We chop the commit id down to 7 chars because this
+            # forces git to not short-circuit and just echo the
+            # full length id it's given.  This also seperates
+            # the concern of the git repo having the commit object
+            # from a branch having the commit object
+            subject.get_rev(self.scratch[0], new_commits[0][:7])
+
+    def test_dry_run_dirty(self):
+        contents = [{'A': x} for x in range(5)] 
+        common_commits = self.create_repos(2, contents)
+        new_content = [{'A': x} for x in range(5, 10)]
+        new_commits = self.create_commits(1, new_content)
+        new_master_content = [{'A': 10}]
+        new_master_commits = self.create_commits(0, new_master_content)
+
+        with self.assertRaises(subject.PushFailure):
+            subject.push(self.scratch[1], 'origin', ['master'])
 
 
+    def test_for_real_clean(self):
+        contents = [{'A': x} for x in range(5)] 
+        common_commits = self.create_repos(2, contents)
+        new_content = [{'A': x} for x in range(5, 10)]
+        new_commits = self.create_commits(1, new_content)
+        subject.checkout(self.scratch[0], branch_name='notmaster')
+        
+        expected = {
+            'url': os.path.abspath(self.scratch[0]),
+            'branches':{
+                'master': (common_commits[-1], new_commits[-1])
+            }
+        }
+        actual = subject.push(self.scratch[1], 'origin', ['master'], dry_run=False)
 
+        self.assertEqual(new_commits[0],
+            subject.get_rev(self.scratch[0], new_commits[0][:7]))
