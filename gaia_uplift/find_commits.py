@@ -17,9 +17,9 @@ id_pattern = git.valid_id_regex
 
 # These regexes *must* have a single named group:
 #   * id: this is a direct commit id, do nothing further
-#   * pr: this is a pull request number, look up the PR
 _commit_regex = [
-    "/commit/(?P<id>%s)" % id_pattern
+    "/commit/(?P<id>%s)" % id_pattern,
+    "[Mm]aster:? *(?P<id>%s)" % id_pattern
 ]
 commit_regex = [re.compile(x) for x in _commit_regex]
 
