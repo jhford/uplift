@@ -14,6 +14,7 @@ setup(
                         "requests",
                         "PrettyTable"],
     tests_require = ["nose",
+                     "mock",
                      "rednose"],
     test_suite = "nose.collector",
     # metadata for upload to PyPI
