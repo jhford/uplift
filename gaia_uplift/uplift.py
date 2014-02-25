@@ -53,8 +53,7 @@ def order_commits(repo_dir, requirements):
     return git.sort_commits(repo_dir, commits, "master")
 
 
-def uplift_bug(repo_dir, bug_id, commit, to_branches, from_branch="master"):
-    """Uplift bug_id from branch to to_branches.  Return successful branches"""
+def uplift_commit(repo_dir, commit, to_branches, from_branch="master"):
     uplift_info = {'success': {},
                    'failure': []}
     for branch in to_branches:
@@ -101,7 +100,7 @@ def uplift(repo_dir, gaia_url, requirements):
         print "\n", "="*80
         print "Attempting to uplift %s commit to %s" % (commit, util.e_join(needed_on))
         uplift[commit]['needed_on'] = needed_on
-        result = uplift_bug(repo_dir, bug_id, commit, needed_on)
+        result = uplift_commit(repo_dir, commit, needed_on)
         print "Sucess on %s" % util.e_join(result['success'].keys())
         print "Failure on %s" % util.e_join(result['failure'])
         uplift[commit]['uplift_status'] = result
