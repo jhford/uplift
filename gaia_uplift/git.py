@@ -67,7 +67,7 @@ def run_cmd(command, workdir, read_out=True, env=None, delete_env=None, **kwargs
         raise sp.CalledProcessError(proc.returncode, command, stdout)
     if read_out:
         return stdout
-    return 0
+    return 0 # We can't get here without the return code being other than zero
 
 def git_op(command, workdir=os.getcwd(), **kwargs):
     """ This function is a simple wrapper that might be used to make
@@ -366,7 +366,7 @@ def create_gaia(repo_dir, gaia_url):
     git_op(["clone", "file://%s" % cache_dir, repo_dir], workdir=repo_dir_p)
     git_op(["remote", "rename", "origin", "cache"], workdir=repo_dir)
     git_op(["remote", "add", "origin", gaia_url], workdir=repo_dir)
-    print "Fetching remote references from remote"
+    print "Fetching remote references"
     git_op(["fetch", "origin"], workdir=repo_dir)
     branches = c.read_value('repository.enabled_branches')
     for branch in branches + ['master']:

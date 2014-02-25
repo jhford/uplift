@@ -10,6 +10,7 @@ except:
     print "Careful about Control-C"
 
 import uplift
+import find_commits
 import merge_hd
 import git
 import reporting
@@ -34,20 +35,20 @@ def main():
         print reporting.display_uplift_requirements(bugs)
     elif cmd == 'uplift':
         requirements = uplift.build_uplift_requirements(gaia_path)
-        print "\n\nUplift requirements:"
-        print reporting.display_uplift_requirements(requirements)
-        uplift_report = uplift.uplift(gaia_path, gaia_url, requirements)
-        print reporting.display_uplift_report(uplift_report)
-        push_info = None
-        for i in range(5):
-            try:
-                push_info = uplift.push(gaia_path)
-            except git.PushFailure:
-                pass
+        full_requirements = find_commits.for_all_bugs(gaia_path, requirements)
 
-        if push_info:
-            reporting.comment(gaia_path, uplift_report)
-        else:
+        print "\n\nUplift requirements:"
+        print reporting.display_uplift_requirements(full_requirements)
+        uplift_report = uplift.uplift(gaia_path, gaia_url, full_requirements)
+        print reporting.display_uplift_report(uplift_report)
+        try:
+            push_info = uplift.push(gaia_path)
+            if push_info:
+                reporting.comment(gaia_path, uplift_report)
+            else:
+                print "To replay the comments for this push, run:"
+                print "  uplift comments %s" % uplift.uplift_dated_file
+        except git.PushFailure:
             file_name = os.path.abspath("comments_%s.txt" % util.time_str())
             print "Commenting failed.  The comments that would be need to be made will"
             print "be written out to %s" % file_name

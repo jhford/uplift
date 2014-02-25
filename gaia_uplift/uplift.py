@@ -23,6 +23,7 @@ import configuration as c
 requirements_file = os.path.abspath("requirements.json")
 uplift_report_file = os.path.abspath("uplift_report.json")
 uplift_dated_file = os.path.abspath("uplift_outcome_%s.json" % util.time_str())
+push_info_file = os.path.abspath("uplift_info_%s.json" % util.time_str())
 skip_bugs_file = os.path.abspath("skip_bugs.json")
 
 
@@ -80,13 +81,11 @@ def uplift(repo_dir, gaia_url, requirements):
     print "Created Gaia in %0.2f seconds" % util.time_end(t)
 
     # Determining what needs to be uplifted
-    found_bugs = find_commits.for_all_bugs(repo_dir, requirements)
     with_commits = {}
-    for bug_id in found_bugs.keys():
-        if found_bugs[bug_id].has_key('commits'):
-            with_commits[bug_id] = found_bugs[bug_id]
+    for bug_id in requirements.keys():
+        if requirements[bug_id].has_key('commits'):
+            with_commits[bug_id] = requirements[bug_id]
 
-    util.write_json(requirements_file, with_commits)
     ordered_commits = order_commits(repo_dir, with_commits)
 
     uplift = dict([(x, {}) for x in ordered_commits])
@@ -190,22 +189,18 @@ def _display_push_info(push_info):
 
 def push(repo_dir):
     branches = c.read_value('repository.enabled_branches')
-    preview_push_info = git.push(
-        repo_dir, remote="origin",
-        branches=branches, dry_run=True)
+    preview_push_info = git.push(repo_dir, remote="origin", branches=branches, dry_run=True)
     print "If you push, you'd be pushing: "
     _display_push_info(preview_push_info)
-    prompt = "Enter either push or cancel: "
-    user_input = raw_input(prompt).strip()
-    while True:
-        if user_input == 'push':
-            return git.push(
-                repo_dir, remote="origin",
-                branches=branches,
-                dry_run=False)
-        elif user_input == 'cancel':
-            return None
-        else:
-            user_input = raw_input(prompt).strip()
-
+    if not util.ask_yn('Do you wish to push?'):
+        return None
+    for i in range(5):
+        try:
+            rv = git.push(repo_dir, remote="origin", branches=branches, dry_run=False)
+            util.write_json(push_info_file, rv)
+            print "Push attempt %d worked" % int(i+1)
+            return rv
+        except:
+            print "Push attempt %d failed" % int(i+1)
+    raise git.PushFailure("remote %s branches %s" % (remote, util.e_join(branches)))
 
