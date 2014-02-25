@@ -37,10 +37,7 @@ def main():
         print "\n\nUplift requirements:"
         print reporting.display_uplift_requirements(requirements)
         uplift_report = uplift.uplift(gaia_path, gaia_url, requirements)
-        print "STARTING_NEW_UPLIFT"
-        print "==" * 80
         print reporting.display_uplift_report(uplift_report)
-
         push_info = None
         for i in range(5):
             try:
@@ -75,11 +72,6 @@ def main():
 
     elif cmd == 'merge-comments':
         merge_hd.comment(gaia_path, cmd_args[0], cmd_args[1])
-    elif cmd == 'reset-gaia':
-        git.delete_gaia(gaia_path)
-        git.create_gaia(gaia_path, gaia_url)
-    elif cmd == 'update-gaia':
-        git.update_gaia(gaia_path, gaia_url)
     elif cmd == "sort-commits":
         if len(cmd_args) < 3:
             print "ERROR: You must have a branch and at least one commit to sort"
