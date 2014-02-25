@@ -95,6 +95,12 @@ Problem: The program dies after a push but the push was successful
 
 Solution: Use <code>uplift comments</code> to redo comments.  Make sure you don't redo the uplift
 
+Problem: my push succeeded but commenting died and I re-did the uplift and lost my commits for commenting
+
+Solution: There is a filed called <code>uplift_outcome_datestamp.json</code> that stores
+the same contents as the uplift_report.json file that the <code>comments</code> command uses.  Copy
+the correct <code>uplift_outcome_datestamp.json</code> to be <code>uplift_report.json</code>
+
 # Important notes
 You are modifying one of Github's most active repositories.  This repository
 and the branches that you are working on are what gets put on shipping phones.
