@@ -165,9 +165,13 @@ def build_uplift_requirements(repo_dir, queries):
         bug_info = util.read_json(requirements_file)
     else:
         bug_info = {}
-        bugs = dict([(x, bzapi.fetch_complete_bug(x)) for x in find_bugs(queries) if not is_skipable(x)])
-        for bug_id in sorted(bugs.keys()):
-            bug = bugs[bug_id]
+        bugs = [x for x in find_bugs(queries) if not is_skipable(x)]
+        print "Fetching bug data"
+        for bug_id in bugs:
+            if is_skipable(bug_id):
+                continue
+            bug = bzapi.fetch_complete_bug(bug_id)
+            print "+",
             needed_on = branch_logic.needed_on_branches(bug)
             if len(needed_on) == 0:
                 continue
@@ -175,6 +179,7 @@ def build_uplift_requirements(repo_dir, queries):
             b['needed_on'] = needed_on
             b['already_fixed_on'] = branch_logic.fixed_on_branches(bug)
             b['summary'] = bug['summary']
+        print "\nFinished fetching bug data"
         util.write_json(requirements_file, bug_info)
     return bug_info
 
