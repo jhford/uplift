@@ -7,6 +7,7 @@ import isodate
 import re
 import json
 import traceback
+import copy
 
 import configuration as c
 
@@ -39,17 +40,34 @@ def run_cmd(command, workdir, read_out=True, env=None, delete_env=None, **kwargs
     else:
         func = sp.check_call
 
+    kwargs = copy.deepcopy(kwargs)
+    kwargs['stderr'] = sp.PIPE
+    if read_out:
+        kwargs['stdout'] = sp.PIPE
+
+    proc = sp.Popen(command, cwd=workdir, env=full_env, **kwargs)
+
+    stdout, stderr = proc.communicate()
+
     with open("cmds.log", "ab+") as cmd_log:
         log_line = {
             'command': command,
             'cwd': os.getcwd(),
             'workdir': workdir,
-            'env': env
+            'env': env,
+            'exit_code': proc.returncode,
+            'stdout': stdout,
+            'stderr': stderr
         }
         json.dump(log_line, cmd_log, indent=2)
         cmd_log.write(',\n')
         cmd_log.flush()
-    return func(command, cwd=workdir, env=full_env, **kwargs)
+
+    if proc.returncode != 0:
+        raise sp.CalledProcessError(proc.returncode, command, stdout)
+    if read_out:
+        return stdout
+    return 0
 
 def git_op(command, workdir=os.getcwd(), **kwargs):
     """ This function is a simple wrapper that might be used to make
