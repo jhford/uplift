@@ -36,7 +36,7 @@ uplift driver program called <code>uplift</code>.  The important subcommands are
 
 * <code>show</code>: this command takes no arguments.  It does the requirement gathering stage of an uplift
 * <code>uplift</code>: this command takes no arguments.  See the section called 'finding commits' for details
-* <code>comments</code>: this command uses the data in <code>uplift_report.json</code> to replay the commenting
+* <code>comments [uplift_report_file.json]</code>: this command uses the data in <code>uplift_report.json</code> to replay the commenting.  Optionally, pass in an alternate Uplift Report json file to work from
 and flag setting.  Useful if there is a bug in the commenting code and you need to retry *just* the comments
 * <code>update</code>: use the uplift program's logic to recreate a clean slate of Gaia using the cached Gaia
 * <code>merge to-branch from-branch</code>: checkout out to-branch and merge in from-branch.  This will 

@@ -22,12 +22,8 @@ import configuration as c
 # or use a single file which contains *all* the information only ever added to
 requirements_file = os.path.abspath("requirements.json")
 uplift_report_file = os.path.abspath("uplift_report.json")
-uplift_dated_file = os.path.abspath(time.strftime("uplift_outcome_%Y_%m_%d_%H%M%S.json"))
+uplift_dated_file = os.path.abspath("uplift_outcome_%s.json" % util.time_str())
 skip_bugs_file = os.path.abspath("skip_bugs.json")
-
-def read_requirements(name, path):
-
-    return None
 
 
 def find_bugs(queries):
@@ -80,11 +76,7 @@ def uplift(repo_dir, gaia_url, requirements):
     # Setup stuff
     t=util.time_start()
     print "Updating Gaia"
-    git.delete_gaia(repo_dir)
-    if os.path.exists(repo_dir):
-        git.update_gaia(repo_dir, gaia_url)
-    else:
-        git.create_gaia(repo_dir, gaia_url) # This is sadly broken
+    git.create_gaia(repo_dir, gaia_url) # This is sadly broken
     print "Created Gaia in %0.2f seconds" % util.time_end(t)
 
     # Determining what needs to be uplifted
@@ -160,11 +152,17 @@ def is_skipable(bug_id):
             return True
     return False
 
-def build_uplift_requirements(repo_dir, queries):
+def build_uplift_requirements(repo_dir):
     if os.path.exists(requirements_file) and util.ask_yn("Found existing requirements. Should they be used?"):
         bug_info = util.read_json(requirements_file)
     else:
         bug_info = {}
+        enabled_branches = c.read_value('repository.enabled_branches')
+        all_queries = c.read_value('queries')
+        queries = []
+        for branch in enabled_branches:
+            queries.extend(all_queries[branch])
+
         bugs = [x for x in find_bugs(queries) if not is_skipable(x)]
         print "Fetching bug data"
         for bug_id in bugs:

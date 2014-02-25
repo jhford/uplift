@@ -18,6 +18,9 @@ def time_start():
 def time_end(start_time):
     return time.time() - start_time
 
+def time_str(t=None):
+    return time.strftime("%Y_%m_%d_%H%M%S", t if t else time.localtime())
+
 def ask_yn(q, default=True):
     """Give me a question, I'll ask it and give you the result.
     Default of True means that we'll accept '\n' as Yes.
