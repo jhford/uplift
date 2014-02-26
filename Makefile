@@ -27,8 +27,8 @@ release: release-test
 	fi
 	echo $$(( $$(awk "/[0-9]+/ { print $$1 }" < version) + 1)) > version
 	git add version
-	git tag "v$$(awk "/[0-9]+/ { print $$1 }" < version)"
 	git commit -m "Relase for v$$(awk "/[0-9]+/ { print $$1 }" < version)"
+	git tag "v$$(awk "/[0-9]+/ { print $$1 }" < version)"
 	python setup.py develop
 	python setup.py sdist upload
 
