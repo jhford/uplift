@@ -17,6 +17,6 @@ class TrimWords(unittest.TestCase):
 
     def test_more_than_max_with_spaces(self):
         s = 'a a a a a a a a a'
-        expected = 'a a a...'
+        expected = 'a a a a...'
         actual = subject.trim_words(s, 9)
         self.assertEqual(expected, actual)

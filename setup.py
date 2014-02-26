@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name = "gaia_uplift",
-    version = open('version').read(),
+    version = open('version').read().strip(),
     packages = ['gaia_uplift'],
     package_dir = {'gaia_uplift': 'gaia_uplift'},
     package_data = {'gaia_uplift': ['config.json']},
