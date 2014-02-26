@@ -15,6 +15,7 @@ import merge_hd
 import git
 import reporting
 import util
+import traceback
 import configuration as c
 
 def main():
@@ -44,16 +45,21 @@ def main():
         try:
             push_info = uplift.push(gaia_path)
             if push_info:
-                reporting.comment(gaia_path, uplift_report)
+                try:
+                    reporting.comment(gaia_path, uplift_report)
+                except Exception as e:
+                    print "ERROR: Commenting on the bugs failed"
+                    print "  Fix the error and try again with:"
+                    print "  uplift comments %s" % uplift.uplift_dated_file
+                    print "DEBUG INFO FOLLOWS:"
+                    print e
+                    traceback.print_exc()
             else:
                 print "To replay the comments for this push, run:"
                 print "  uplift comments %s" % uplift.uplift_dated_file
         except git.PushFailure:
-            file_name = os.path.abspath("comments_%s.txt" % util.time_str())
-            print "Commenting failed.  The comments that would be need to be made will"
-            print "be written out to %s" % file_name
-            with open(file_name, 'w+') as f:
-                f.write(reporting.display_uplift_comments(gaia_path, uplift_report))
+            print "ERROR: Pushing failed.  Try doing another uplift, and tell it to 'reuse' commits"
+            exit(1)
 
     elif cmd == 'update':
         git.create_gaia(gaia_path, gaia_url)

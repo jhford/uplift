@@ -98,57 +98,6 @@ def merge_script(repo_dir, commit, branches):
     return "\n".join(s)
 
 
-def display_good_bug_comment(repo_dir, bug_id, bug):
-    """Print everything that's needed for a good bug"""
-    r=["="*80,
-       "COMMENT FOR BUG %s" % bug_id,
-       "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id,
-       "",
-       "Set these flags:"]
-    for flag in bug['flags_to_set'].keys():
-        r.append("  * %s -> %s" % (flag, bug['flags_to_set'][flag]))
-    r.extend(["", "Make this comment:"])
-    for commit in bug['commits']:
-        r.append("Uplifted commit %s as:" % commit)
-        for branch in bug['uplift_status'][commit]['success'].keys():
-            branch_commit = bug['uplift_status'][commit]['success'][branch]
-            if branch_commit == commit:
-                r.append("%s already had this commit" % branch)
-            else:
-                r.append("%s: %s" % (branch, branch_commit))
-    r.extend(["", "-"*80])
-    return "\n".join(r)
-
-
-def display_bad_bug_comment(repo_dir, bug_id, bug):
-    """Print everything that's needed for a bad bug"""
-    r = ["="*80,
-         "COMMENT FOR BUG %s" % bug_id,
-         "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id,
-         "",
-         "I was not able to uplift this bug to %s.  If this bug has dependencies " % util.e_join(bug['needed_on']) +
-         "which are not marked in this bug, please comment on this bug.  " +
-         "If this bug depends on patches that aren't approved for %s, " % util.e_join(bug['needed_on']) +
-         "we need to re-evaluate the approval.  " +
-         "Otherwise, if this is just a merge conflict, you might be able to resolve " +
-         "it with:",
-         ""]
-    for commit in git.sort_commits(repo_dir, bug['commits'], 'master'):
-        r.append(merge_script(repo_dir, commit, bug['uplift_status'][commit]['failure']))
-    r.extend(["", "-"*80])
-    return "\n".join(r)
-
-
-def display_ugly_bug_comment(repo_dir, bug_id, bug):
-    """Print everything that's needed for an ugly bug"""
-    r = ["="*80,
-         "BUG https://bugzilla.mozilla.org/show_bug.cgi?id=%s IS MESSED UP!" % bug_id,
-         "",
-         json.dumps({bug_id: bug}, indent=2, sort_keys=True),
-         "-"*80,""]
-    return "\n".join(r)
-
-
 def classify_gbu(report):
     """I figure out which bugs are good, bad and ugly.  Good means that everything
     that was desired happened.  Bad means that nothing happened.  Ugly means that
@@ -174,26 +123,6 @@ def classify_gbu(report):
                             " success: " + str(n_success) + " failure: "
                             + str(n_failure))
     return good, bad, ugly
-
-
-def display_uplift_comments(repo_dir, report):
-    skipped_bugs = [x for x in report.keys() if not report[x].has_key('uplift_status')]
-    good = [] # All commits on all branches
-    bad = [] # No commits
-    ugly = [] # Partial uplift
-    good, bad, ugly = classify_gbu(report)
-    r = ["Skipped bugs: %s" % ", ".join(skipped_bugs) if len(skipped_bugs) > 0 else "none",
-         "Good Bugs: %s" % ", ".join(good) if len(skipped_bugs) > 0 else "none",
-         "Bad Bugs: %s" % ", ".join(bad) if len(skipped_bugs) > 0 else "none",
-         "Ugly Bugs: %s" % ", ".join(ugly) if len(skipped_bugs) > 0 else "none"]
-    for bug_id in good:
-        r.append(display_good_bug_comment(repo_dir, bug_id, report[bug_id]))
-    for bug_id in bad:
-        r.append(display_bad_bug_comment(repo_dir, bug_id, report[bug_id]))
-    for bug_id in ugly:
-        r.append(display_ugly_bug_comment(repo_dir, bug_id, report[bug_id]))
-    return "\n".join(r)
-
 
 def good_bug_comment(repo_dir, bug_id, bug):
     values = bug['flags_to_set']

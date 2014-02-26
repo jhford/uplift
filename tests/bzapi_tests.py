@@ -182,4 +182,4 @@ class RawQuery(unittest.TestCase):
             request.return_value = BadStatus()
             with self.assertRaises(subject.FailedBZAPICall):
                 subject._raw_query('get', 'http://www.google.com/')
-
+    
