@@ -3,6 +3,7 @@ import copy
 import re
 import json
 import subprocess as sp
+import textwrap
 
 import git
 import util
@@ -155,7 +156,7 @@ def for_one_bug(repo_dir, bug_id, bug_data, upstream):
             print "    BECAUSE:"
             for reason in guesses[keys[i]]:
                 for line in reason.split('\n'):
-                    print "          %s" % line
+                    print "        ", "\n        ".join(textwrap.wrap(line)
 
     def _open_browser():
         open_bug_in_browser(bug_id)
