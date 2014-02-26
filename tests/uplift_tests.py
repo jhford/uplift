@@ -2,10 +2,12 @@ import unittest
 import os
 import json
 from mock import patch
+import tempfile
 
 import gaia_uplift.git as git
 import gaia_uplift.bzapi as bzapi
 import gaia_uplift.uplift as subject
+import gaia_uplift.configuration as c
 
 class BugSkipping(unittest.TestCase):
 
@@ -192,4 +194,90 @@ class Push(unittest.TestCase):
             actual = subject.push(None)
             self.assertEqual(expected, actual)
 
+class BuildUpliftRequirements(unittest.TestCase):
+    def setUp(self):
+        self.old_config = c.json_file
+        self.config = os.path.join(os.path.dirname(__file__), 'uplift_tests_config.json')
+        c.change_file(self.config)
 
+    def tearDown(self):
+        c.change_file(self.old_config)
+
+    def test_new(self):
+        old_rf = subject.requirements_file
+        subject.requirements_file = os.devnull
+        with patch('gaia_uplift.uplift.find_bugs') as find_bugs, \
+             patch('gaia_uplift.uplift.is_skipable') as is_skipable, \
+             patch('gaia_uplift.bzapi.fetch_complete_bug') as fetch_bug, \
+             patch('gaia_uplift.util.ask_yn') as ask_yn:
+            # This is basically a directory which we can use for the fake
+            # bug data fetching
+            bug_data = {
+                '1': {
+                    'v1-status': 'fixed',
+                    'v2-status': 'verified',
+                    'v3-status': 'purplemonkeydishwasher',
+                    'blocking': 'v1',
+                    'summary': 'bug1'
+                },
+                '2': {
+                    'v3-status': '---',
+                    'blocking': 'v3',
+                    'summary': 'bug2'
+                },
+                '3': {
+                    'v3-status': '---',
+                    'blocking': '-',
+                    'summary': 'bug3'
+                },
+                '4': {
+                    'v3-status': '---',
+                    'summary': 'bug4',
+                    'attachments': [{'flags': [{'name': 'approval-v3', 'status': '+'}]}]
+                },
+                '5': {
+                    'v3-status': '---',
+                    'summary': 'bug5',
+                    'attachments': [{'flags': [{'name': 'approval-v3','status': '-'}]}]
+                },
+            }
+            def fetch_bugs_gen(x):
+                return bug_data[x]
+
+            # Fake returns
+            ask_yn.return_value = False
+            is_skipable.return_value = False
+            find_bugs.return_value = bug_data.keys()
+            fetch_bug.side_effect = fetch_bugs_gen
+            
+            expected = {
+                '1': {
+                    'needed_on': [u'v3'],
+                    'already_fixed_on': [u'v1', u'v2'],
+                    'summary': 'bug1'
+                },
+                '2': {
+                    'needed_on': [u'v3'],
+                    'already_fixed_on': [],
+                    'summary': 'bug2'
+                },
+                '4': {
+                    'needed_on': [u'v3'],
+                    'already_fixed_on': [],
+                    'summary': 'bug4'
+                },
+            }
+
+            actual = subject.build_uplift_requirements(None)
+            self.assertEqual(expected, actual)
+        subject.requirements_file = old_rf
+
+    def test_existing(self):
+        with patch('gaia_uplift.util.ask_yn') as ask_yn, \
+             patch('gaia_uplift.util.read_json') as read_json:
+            expected = 'lemonmeranguepie'
+            read_json.return_value = expected
+            ask_yn.return_value = True
+
+            actual = subject.build_uplift_requirements(None)
+            self.assertEqual(expected, actual)
