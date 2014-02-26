@@ -273,16 +273,6 @@ class BuildUpliftRequirements(unittest.TestCase):
             self.assertEqual(expected, actual)
         subject.requirements_file = old_rf
 
-    def test_existing(self):
-        with patch('gaia_uplift.util.ask_yn') as ask_yn, \
-             patch('gaia_uplift.util.read_json') as read_json:
-            expected = 'lemonmeranguepie'
-            read_json.return_value = expected
-            ask_yn.return_value = True
-
-            actual = subject.build_uplift_requirements(None)
-            self.assertEqual(expected, actual)
-
 
 class Uplift(unittest.TestCase):
     def setUp(self):
