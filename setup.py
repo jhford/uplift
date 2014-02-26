@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 setup(
-    name = "gaia_uplift",
+    name = "uplift",
     version = open('version').read().strip(),
     packages = ['gaia_uplift'],
     package_dir = {'gaia_uplift': 'gaia_uplift'},
