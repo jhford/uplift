@@ -10,12 +10,14 @@ import configuration as c
 
 
 def trim_words(s, max=90):
-    if len(s) <= max:
-        return s
+    if len(s) <= max + 3:
+        return s[:max]
     else:
-        i = max - 3
+        i = max - 2
         while s[i] != ' ':
             i -= 1
+            if i == 0:
+                return s[:max]
         return s[:i] + '...'
 
 
