@@ -1,0 +1,15 @@
+language: python
+python:
+  - "2.7"
+install:
+  - "pip install isodate requests PrettyTable"
+  - "pip install nose mock rednose"
+before_script:
+  - "git config --global user.email \"test_user@localhost\""
+  - "git config --global user.name \"Test User\""
+  - "python -c \"import json ; import os ; json.dump({'username': 'testuser', 'password': 'testpass'}, open(os.path.expanduser('~/.bzapi_credentials'), 'w'))\""
+script: 
+  - "nosetests tests/*.py"
+after_failure:
+  - cat cmds.log
+  - cat uplift_api_calls.log

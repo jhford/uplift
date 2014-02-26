@@ -18,3 +18,4 @@ api-calls.log
 .scratch_*
 .git_unit_test_scratch*
 .bugs.pcl
+/*.json
