@@ -29,6 +29,7 @@ release: release-test
 	git add version
 	git commit -m "Relase for v$$(awk "/[0-9]+/ { print $$1 }" < version)"
 	git tag "v$$(awk "/[0-9]+/ { print $$1 }" < version)"
+	git push origin master "v$$(awk "/[0-9]+/ { print $$1 }" < version)" 
 	python setup.py develop
 	python setup.py sdist upload
 
