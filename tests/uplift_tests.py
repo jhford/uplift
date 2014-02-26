@@ -363,3 +363,39 @@ class Uplift(unittest.TestCase):
             actual = subject.uplift(None, None, requirements)
             self.assertEqual(expected, actual)        
 
+    def test_noop(self):
+        with patch('gaia_uplift.uplift.order_commits') as order_commits, \
+             patch('gaia_uplift.uplift.uplift_commit') as uplift_commit, \
+             patch('gaia_uplift.git.sort_commits') as sort_commits, \
+             patch('gaia_uplift.git.create_gaia') as create_gaia:
+        
+            uplift_outcome = {
+                'success': {'v3': 'abcd123'},
+                'no_op': ['v3'],
+                'failure': []
+            }
+
+            requirements = {
+                '1': {
+                    'needed_on': [u'v3'],
+                    'already_fixed_on': [],
+                    'summary': "success",
+                    'commits': ["abcd123"]
+                }
+            }
+
+            expected = copy.deepcopy(requirements)
+            expected['1']['uplift_status'] = {
+                'abcd123': uplift_outcome
+            }
+            expected['1']['flags_to_set'] = {
+                'v3-status': 'fixed'
+            }
+
+            # Set up mocks
+            uplift_commit.return_value = uplift_outcome
+            order_commits.return_value = ['abcd123']
+            sort_commits.return_value = ['abcd123']
+            
+            actual = subject.uplift(None, None, requirements)
+            self.assertEqual(expected, actual)
