@@ -3,6 +3,13 @@ test:
 	rm -rf .scratch_
 	nosetests --rednose
 
+COVERAGE_DIR=coverage
+.PHONY: coverage
+coverage:
+	rm -rf $(COVERAGE_DIR)
+	nosetests --with-coverage --cover-package=gaia_uplift --cover-html --cover-html-dir=$(COVERAGE_DIR)
+	open $(COVERAGE_DIR)/index.html
+
 .PHONY: release-test
 release-test: test
 	# This is a more exhaustive set of tests
