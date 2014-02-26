@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/jhford/uplift.png?branch=master)](https://travis-ci.org/jhford/uplift)
+
 # Background
 This tool was initially written to make our branch landing strategy as painless
 as possible.  It started as a bash script, then progressed into a very basic
