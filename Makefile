@@ -1,7 +1,6 @@
 .PHONY: test
 test:
 	rm -rf .scratch_
-	chmod +x tests/test_bin/*.sh
 	nosetests --rednose
 
 .PHONY: clean
