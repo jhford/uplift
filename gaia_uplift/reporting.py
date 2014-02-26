@@ -1,6 +1,7 @@
 import json
 import traceback
 import prettytable as pt
+import textwrap
 
 import util
 import git
@@ -8,6 +9,7 @@ import bzapi
 import uplift
 import configuration as c
 
+class FailedToComment(Exception): pass
 
 def trim_words(s, max=90):
     if len(s) <= max + 3:
@@ -124,30 +126,30 @@ def classify_gbu(report):
                             + str(n_failure))
     return good, bad, ugly
 
-def good_bug_comment(repo_dir, bug_id, bug):
-    values = bug['flags_to_set']
-    comment = ""
+def generate_good_bug_msg(bug):
+    msg = ['Uplift successful']
     for commit in bug['commits']:
-        comment = "Uplifted %s to:\n" % commit
+        msg.append("Uplifted %s to:" % commit)
         for branch in bug['uplift_status'][commit]['success'].keys():
             branch_commit = bug['uplift_status'][commit]['success'][branch]
             if branch_commit == commit:
-                comment += "%s already had this commit\n" % branch
+                msg.append("  * %s already had this commit" % branch)
             else:
-                comment += "%s: %s\n" % (branch, branch_commit)
+                msg.append("  * %s: %s" % (branch, branch_commit))
+    return '\n'.join(msg)
+    
+
+
+def good_bug_comment(repo_dir, bug_id, bug):
+    values = bug['flags_to_set']
+    comment = generate_good_bug_msg(bug)
     try:
         bzapi.update_bug(bug_id, comment=comment, values=values)
     except Exception, e:
-        print e
-        traceback.print_exc()
-        print "=" * 80
-        print "Unable to comment on bug %s, please do this:" % bug_id
-        print "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id
-        print "Change these flags:"
-        for flag in values.keys():
-            print "  * %s -> %s" % (flag, values[flag])
-        print "\nAnd make this this comment:"
-        print comment
+        raise FailedToComment({
+            'exception': e,
+            'traceback': traceback.format_exc()
+        })
 
 
 def make_needinfo(bug_data):
@@ -172,81 +174,70 @@ def make_needinfo(bug_data):
 
     return flags
 
-
-def bad_bug_comment(repo_dir, bug_id, bug):
-    skip_this_comment = False
-    bug_data = bzapi.fetch_complete_bug(bug_id)
-    for c in [x['text'] for x in bug_data['comments']]:
-        if c and 'git cherry-pick' in c:
-            skip_this_comment = True
+def generate_bad_bug_msg(repo_dir, bug):
     comment = [
-         "I was not able to uplift this bug to %s.  If this bug has dependencies " % util.e_join(bug['needed_on']) +
-         "which are not marked in this bug, please comment on this bug.  " +
-         "If this bug depends on patches that aren't approved for %s, " % util.e_join(bug['needed_on']) +
-         "we need to re-evaluate the approval.  " +
-         "Otherwise, if this is just a merge conflict, you might be able to resolve " +
-         "it with:",
-         ""]
+        "I was not able to uplift this bug to %s.  " % util.e_join(bug['needed_on']),
+        " If this bug has dependencies which are not marked in this bug ",
+        "please comment on this bug.  If this bug depends on patches that ",
+        "aren't approved for %s, " % util.e_join(bug['needed_on']),
+        "we need to re-evaluate the approval.  ",
+        "Otherwise, if this is just a merge conflict, ",
+        "you might be able to resolve it with:"
+    ]
+
+    comment = textwrap.wrap(''.join(comment), 75)
     for commit in git.sort_commits(repo_dir, bug['commits'], 'master'):
         comment.append(merge_script(repo_dir, commit, bug['uplift_status'][commit]['failure']))
-    comment = "\n".join(comment) #ugh
-    if skip_this_comment:
-        print "=" * 80
-        print "Skipping this comment because there was already a merge resolution script"
-        print ""
-        print comment
-        print ""
-        return
+
+
+    return '\n'.join(comment)
+
+
+
+def bad_bug_comment(repo_dir, bug_id, bug):
+    # Short circuit for when we don't need to make a comment
+    bug_data = bzapi.fetch_complete_bug(bug_id, cache_ok=True)
+    for c in [x['text'] for x in bug_data['comments']]:
+        if c and 'git cherry-pick' in c:
+            return
 
     # If there is an assignee, try to needinfo them!
     flags = make_needinfo(bug_data)
+
+    comment = generate_bad_bug_msg(repo_dir, bug)
 
     try:
         bzapi.update_bug(bug_id, comment=comment, values={}, flags=flags)
     except Exception, e:
-        print e
-        traceback.print_exc()
-        print "=" * 80
-        print "Unable to comment on bug %s, please do this:" % bug_id
-        print "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" % bug_id
-        print "\nmake this this comment:"
-        print comment
+        raise FailedToComment({
+            'exception': e,
+            'traceback': traceback.format_exc()
+        })
+
+def generate_ugly_bug_msg(bug):
+    comment = ['This bug was partially uplifted.  This might not be valid']
+    comment.append(generate_good_bug_msg(bug))
+    comment.append('The following commits did not uplift:')
+    for commit in bug['commits']:
+        comment.append("  * %s failed on %s" % (commit, util.e_join(bug['uplift_status'][commit]['failure'])))
+    
+    return '\n'.join(comment)
+    
 
 def ugly_bug_comment(repo_dir, bug_id, bug):
     values = bug['flags_to_set']
-    comment = "This bug was partially uplifted.\n\n"
-    bottom_of_comment = "\n"
-    for commit in bug['commits']:
-        if len(bug['uplift_status'][commit]['success'].keys()) > 0:
-            comment += "Uplifted %s to:\n" % commit
-        for branch in bug['uplift_status'][commit]['success'].keys():
-            branch_commit = bug['uplift_status'][commit]['success'][branch]
-            if branch_commit == commit:
-                comment += "%s already had this commit\n" % branch
-            else:
-                comment += "%s: %s\n" % (branch, branch_commit)
-        for branch in bug['uplift_status'][commit]['failure']:
-            bottom_of_comment += "Commit %s didn't uplift to branch %s\n" % (commit, branch)
-    comment += bottom_of_comment
-
-    # If there is an assignee, try to needinfo them!
+    bug_data = bzapi.fetch_complete_bug(bug_id, cache_ok=True)
     flags = make_needinfo(bug_data)
+
+    comment = generate_ugly_bug_msg(bug)
 
     try:
         bzapi.update_bug(bug_id, comment=comment, values=values, flags=flags)
     except Exception, e:
-        print e
-        traceback.print_exc()
-        print "=" * 80
-        print "Unable to comment on bug %s, please do this:" % bug_id
-        print "https://bugzilla.mozilla.org/show_bug.cgi?id=%s" & bug_id
-        print "Change these flags:"
-        for flag in values.keys():
-            print "  * %s -> %s" % flag, values[flag]
-        print "\nAnd make this this comment:"
-        print comment
-        print "-"*80
-        print bug
+        raise FailedToComment({
+            'exception': e,
+            'traceback': traceback.format_exc()
+        })
 
 
 def comment(repo_dir, report):
@@ -254,21 +245,26 @@ def comment(repo_dir, report):
     bad = [] # No commits
     ugly = [] # Partial uplift
     good, bad, ugly = classify_gbu(report)
+    failed_bugs = []
 
     def x(bug_id):
         del report[bug_id]
         util.write_json(uplift.uplift_report_file, report)
 
-    for bug_id in good:
-        print "Commenting on good bug %s" % bug_id
-        good_bug_comment(repo_dir, bug_id, report[bug_id])
-        x(bug_id)
-    for bug_id in bad:
-        print "Commenting on bad bug %s" % bug_id
-        bad_bug_comment(repo_dir, bug_id, report[bug_id])
-        x(bug_id)
-    for bug_id in ugly:
-        print "Commenting on ugly bug %s" % bug_id
-        ugly_bug_comment(repo_dir, bug_id, report[bug_id])
-        x(bug_id)
+    for i, j in (good, good_bug_comment), (bad, bad_bug_comment), (ugly, ugly_bug_comment):
+        for bug_id in i:
+            print "Commenting on bug %s" % bug_id
+            try:
+                j(repo_dir, bug_id, report[bug_id])
+                x(bug_id)
+            except FailedToComment:
+                failed_bugs.append(bug_id)
+                
+    if len(failed_bugs) > 0:
+        filename = os.path.abspath('failed_comments_%s.json' % util.time_str())
+        print "The following bugs had commenting failures"
+        print util.e_join(failed_bugs)
+        print "Creating a file to use with the 'uplift comments' file to try just these."
+        print "Fix the issue then run: uplift comments %s" % filename
+        util.write_json(filename, report)
 

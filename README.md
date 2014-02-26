@@ -166,3 +166,112 @@ These things make your submission less likely to be accepted:
 Issues will be tracked in the github issue tracker
 
 You should always run unit tests with <code>make test</code>.  Only hosers don't run unit tests
+
+
+# Sample run
+This is a sample run of a really simple uplift
+<pre>
+$ uplift uplift
+Found existing requirements. Should they be used? [Y/n]: n
+Running Bugzilla searches
+......
+Finished running searches
+Fetching bug data
++ +
+Finished fetching bug data
+================================================================================
+Bug 1 of 2
+================================================================================
+Needed on: v1.3
+Fixed on:
+Type one of
+  * guess-all: add all guesses listed below
+  * guess-1: 1d81c792f93f886f5ea227ee1e5c44ffcb996f70
+    BECAUSE:
+         crdlc@tid.es made a comment which matched the pattern
+        /commit/(?P<id>[a-fA-F0-9]{7,40}):
+         ----------------------------------------------------------------------
+        ----------
+         Merged in master:
+
+         https://github.com/crdlc/gaia/commit/1d81c792f93f886f5ea227ee1e5c44ffc
+        b996f70
+  * sha1 commit: add a raw commit number
+  * skip: add a bug to the list of permanently skipped bugs
+  * delete-all: remove all commits from this bug
+  * delete-N: delete entered commit
+  * browser: (re)open the bug in a browser
+--------------------------------------------------------------------------------
+Bug 973853's 0 commits:
+  * none
+Enter command: 70c72c5
+--------------------------------------------------------------------------------
+Bug 973853's 1 commits:
+  * 0) 70c72c50e9cc17503ece37c990a3d0242664b9b1
+Enter command: done
+================================================================================
+Bug 2 of 2
+================================================================================
+Needed on: v1.3
+Fixed on:
+Type one of
+  * guess-all: add all guesses listed below
+  * guess-1: f03f667e1d92595df8bfddd8b0f0f7ec64d28230
+    BECAUSE:
+         amirn@everything.me made a comment which matched the pattern
+        /commit/(?P<id>[a-fA-F0-9]{7,40}):
+         ----------------------------------------------------------------------
+        ----------
+         landed in master: https://github.com/mozilla-
+        b2g/gaia/commit/f03f667e1d92595df8bfddd8b0f0f7ec64d28230
+  * sha1 commit: add a raw commit number
+  * skip: add a bug to the list of permanently skipped bugs
+  * delete-all: remove all commits from this bug
+  * delete-N: delete entered commit
+  * browser: (re)open the bug in a browser
+--------------------------------------------------------------------------------
+Bug 975917's 0 commits:
+  * none
+Enter command: f03f667
+--------------------------------------------------------------------------------
+Bug 975917's 1 commits:
+  * 0) f03f667e1d92595df8bfddd8b0f0f7ec64d28230
+Enter command: done
+
+
+Uplift requirements:
++--------+-------------+-------------+-------------------------------------------------------------------------------------+
+| Bug    | v1.3 status | v1.2 status | Summary                                                                             |
++--------+-------------+-------------+-------------------------------------------------------------------------------------+
+| 973853 |    needed   |     ---     | Images are not displayed the second time in link and import views                   |
+| 975917 |    needed   |     ---     | [Everything.me] Tapping homebutton while in Collection Rename mode may cause freeze |
++--------+-------------+-------------+-------------------------------------------------------------------------------------+
+Updating Gaia
+Fetching updates to Gaia cache directory
+Deleting Gaia scratch directory
+Cloning Gaia scratch from cache
+Fetching remote references
+Created Gaia in 45.98 seconds
+
+================================================================================
+Attempting to uplift 70c72c50e9cc17503ece37c990a3d0242664b9b1 commit to v1.3
+Sucess on v1.3
+Failure on
+
+================================================================================
+Attempting to uplift f03f667e1d92595df8bfddd8b0f0f7ec64d28230 commit to v1.3
+Sucess on v1.3
+Failure on
++--------+---------------+-------------+-------------+-------------------------------------------------------------------------------------+
+| Bug    | master commit | v1.3 commit | v1.2 commit | Summary                                                                             |
++--------+---------------+-------------+-------------+-------------------------------------------------------------------------------------+
+| 973853 |    70c72c5    |   8fce95f   |     ---     | Images are not displayed the second time in link and import views                   |
+| 975917 |    f03f667    |   b04d2a8   |     ---     | [Everything.me] Tapping homebutton while in Collection Rename mode may cause freeze |
++--------+---------------+-------------+-------------+-------------------------------------------------------------------------------------+
+If you push, you'd be pushing:
+  * v1.3: 55faaae..b04d2a8
+Do you wish to push? [Y/n]: y
+Push attempt 1 worked
+Commenting on bug 973853
+Commenting on bug 975917
+</pre>
