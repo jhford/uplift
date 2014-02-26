@@ -44,7 +44,7 @@ def _raw_query(method, url, attempt=1, **kwargs):
         r = requests.request(method, url, **kwargs)
     except requests.exceptions.RequestException as e:
         write_log()
-        raise FailedBZAPICall(super_exception=e)
+        raise FailedBZAPICall(log_line)
     log_line['request_time'] = util.time_end(t)
     log_line['http_status'] = r.status_code
 
@@ -54,7 +54,7 @@ def _raw_query(method, url, attempt=1, **kwargs):
         except ValueError as e:
             log_line['bzapi_error'] = 'response was not json'
             write_log()
-            raise FailedBZAPICall(super_exception=e)
+            raise FailedBZAPICall(log_line)
 
         if data.get('error', 0) != 0:
             log_line['bzapi_error'] = data['message']
@@ -69,7 +69,7 @@ def _raw_query(method, url, attempt=1, **kwargs):
         try:
             r.raise_for_status()
         except urllib2.HTTPError as e:
-            raise FailedBZAPICall(super_exception=e)
+            raise FailedBZAPICall(log_line)
 
 
 def do_query(url, method='get', retry=False, **kwargs):
@@ -80,8 +80,7 @@ def do_query(url, method='get', retry=False, **kwargs):
 
     for i in range(0, c.read_value('bugzilla.api.attempts')):
         try:
-            json_data = _raw_query(method, url, i+1, **kwargs)
-            return json_data
+            return _raw_query(method, url, i+1, **kwargs)
         except Exception, e:
             print "Query attempt %i failed: %s" % (i, e)
             time.sleep(c.read_value('bugzilla.api.delay'))

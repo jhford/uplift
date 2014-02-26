@@ -3,6 +3,9 @@ import os
 import copy
 import gaia_uplift.bzapi as subject
 import gaia_uplift.configuration as c
+from mock import patch
+import urllib2
+import requests
 
 
 
@@ -116,3 +119,67 @@ class CreateUpdates(BZAPITest):
             'blocking': 'v1'
         }
         self.assertEqual(expected, updates)
+
+class RawQuery(unittest.TestCase):
+    def setUp(self):
+        subject.credentials = subject.load_credentials(os.path.abspath(os.path.join(os.path.dirname(__file__), 'test_cred')))
+
+    def test_success(self):
+        expected = {'hello': 'hi'}
+
+        class SuccessResponse():
+            status_code = 200
+            def json(self):
+                return {'hello': 'hi'}
+
+        with patch('requests.request') as request:
+            request.return_value = SuccessResponse()
+
+            actual = subject._raw_query('get', 'http://www.google.com/')
+            
+            self.assertEqual(expected, actual)
+
+    def test_request_fails(self):
+        with patch('requests.request') as request:
+            request.side_effect = requests.exceptions.RequestException
+            with self.assertRaises(subject.FailedBZAPICall):
+                subject._raw_query('get', 'http://www.google.com/')
+
+    def test_bad_json(self):
+        class BadJson():
+            status_code = 200
+            def json(self):
+                raise ValueError
+        with patch('requests.request') as request:
+            request.return_value = BadJson()
+            with self.assertRaises(subject.FailedBZAPICall):
+                subject._raw_query('get', 'http://www.google.com/')
+            
+    def test_bzapi_internal_error(self):
+        class ApiError():
+            status_code = 200
+            def json(self):
+                return {'error': 1, 'message': 'fake error'}
+        with patch('requests.request') as request:
+            request.return_value = ApiError()
+            with self.assertRaises(subject.FailedBZAPICall):
+                subject._raw_query('get', 'http://www.google.com/')
+
+    def test_bad_status_code(self):
+        class BadStatus():
+            status_code = 404
+            text = 'bad status code'
+            def json(self):
+                return {'hello': 'hi'}
+            def raise_for_status(self):
+                raise urllib2.HTTPError(
+                    'http://www.google.com',
+                    404,
+                    'a bad code',
+                    {},
+                    None)
+        with patch('requests.request') as request:
+            request.return_value = BadStatus()
+            with self.assertRaises(subject.FailedBZAPICall):
+                subject._raw_query('get', 'http://www.google.com/')
+
