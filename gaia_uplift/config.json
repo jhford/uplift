@@ -7,7 +7,7 @@
         }
     },
     "repository": {
-        "enabled_branches": ["v1.4"],
+        "enabled_branches": ["v1.4", "v1.3", "v1.2"],
         "url": "git@github.com:mozilla-b2g/gaia.git"
     },
     "queries": {
