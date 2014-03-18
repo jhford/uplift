@@ -35,10 +35,6 @@ def run_cmd(command, workdir, read_out=True, env=None, delete_env=None, **kwargs
         for d in delete_env:
             if full_env.has_key(d):
                 del full_env[d]
-    if read_out:
-        func = sp.check_output
-    else:
-        func = sp.check_call
 
     kwargs = copy.deepcopy(kwargs)
     kwargs['stderr'] = sp.PIPE
