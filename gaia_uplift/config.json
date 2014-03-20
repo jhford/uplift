@@ -32,7 +32,6 @@
         },
         "blocking_flag": "cf_blocking_b2g",
         "blocking_rules": {
-            "1.4+": ["v1.4"],
             "koi+": ["v1.2"]
         },
         "patch_rules": {
